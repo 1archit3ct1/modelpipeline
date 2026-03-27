@@ -29,6 +29,7 @@ Available actions:
 - shell.run:     {"action": "shell.run", "cmd": "..."}
 - memory.store:  {"action": "memory.store", "text": "..."}
 - memory.query:  {"action": "memory.query", "query": "..."}
+- task.create:   {"action": "task.create", "description": "...", "metadata": {}}
 - task.complete: {"action": "task.complete", "result": "..."}
 - task.fail:     {"action": "task.fail", "error": "..."}
 - respond:       {"action": "respond", "text": "..."}
@@ -239,6 +240,9 @@ class AgentRunner:
                 result = self.memory.store(p["text"], p.get("metadata"))
             elif t == ActionType.MEMORY_QUERY:
                 result = self.memory.retrieve(p["query"], top_k=p.get("top_k", 5))
+            elif t == ActionType.TASK_CREATE:
+                result = self.tasks.create(p["description"], p.get("metadata"))
+                self._bridge("task_created", {"task_id": result.id, "description": result.description})
             elif t == ActionType.TASK_COMPLETE:
                 result = self.tasks.complete(task.id, p.get("result", ""))
                 self._stopped = True
