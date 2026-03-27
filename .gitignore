@@ -30,6 +30,7 @@ workspace/
 # Tauri / Rust
 ui/src-tauri/target/
 ui/src-tauri/WixTools/
+ui/src-tauri/gen/
 
 # OS
 .DS_Store
