@@ -119,6 +119,7 @@ class AgentRunner:
 
         step = 0
         recent_steps = []
+        last_action_result = None  # raw result of immediately preceding action
 
         while step < max_steps and not self._stopped:
             # pause check
@@ -143,6 +144,7 @@ class AgentRunner:
                 recent_steps=recent_steps[-6:],
                 memory_snippets=resume["memory_snippets"],
                 agent_vars=resume["kv_snapshot"],
+                current_observation=last_action_result,  # raw result from last action
             )
 
             messages = [
@@ -173,11 +175,14 @@ class AgentRunner:
                 # ── execute ────────────────────────────────────────────────
                 result = self._execute(action, task)
 
+                # Store raw result for next iteration's current_observation
+                last_action_result = str(result)
+
                 step_record = {
                     "step": step,
                     "action": action.type.value,
                     "params": action.params,
-                    "result": str(result)[:200],
+                    "result": str(result)[:200],  # truncated for history
                     "summary": f"{action.type.value}: {str(result)[:100]}",
                 }
                 recent_steps.append(step_record)

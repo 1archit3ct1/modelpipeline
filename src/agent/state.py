@@ -13,8 +13,11 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger(__name__)
 
 # Hard limit: keep context lean. Model throughput > context richness.
-MAX_STATE_TOKENS = 8000   # conservative — leaves room for system prompt + response
+MAX_STATE_TOKENS = 15000   # conservative — leaves room for system prompt + response
 CHARS_PER_TOKEN  = 4      # rough estimate
+
+# Current observation budget: raw result of immediately preceding action
+MAX_OBSERVATION_TOKENS = 4000
 
 
 def _truncate(text: str, max_tokens: int) -> str:
@@ -37,10 +40,14 @@ class StateSerializer:
         memory_snippets: Optional[List[Dict]] = None,
         agent_vars: Optional[Dict] = None,
         token_budget: int = MAX_STATE_TOKENS,
+        current_observation: Optional[str] = None,
     ) -> str:
         """
         Produce a compact state string fit for model context.
         Trims aggressively to stay within token_budget.
+        
+        current_observation: raw, full result of the immediately preceding action
+                           (up to MAX_OBSERVATION_TOKENS) - highest priority after task
         """
         parts = []
         budget = token_budget
@@ -50,6 +57,12 @@ class StateSerializer:
             task_str = f"## Current Task\nID: {task.get('id')}\n{task.get('description','')}\nStatus: {task.get('status','')}"
             parts.append(task_str)
             budget -= len(task_str) // CHARS_PER_TOKEN
+
+        # current observation — raw result of last action (critical for agent to see full output)
+        if current_observation:
+            obs_str = "## Current Observation\n" + _truncate(current_observation, MAX_OBSERVATION_TOKENS)
+            parts.append(obs_str)
+            budget -= MAX_OBSERVATION_TOKENS
 
         # recent steps — most recent first, trim if needed
         if recent_steps:

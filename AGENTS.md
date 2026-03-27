@@ -118,7 +118,7 @@ All model outputs are parsed as JSON action blocks:
 
 The state serializer enforces a hard token budget to keep model throughput high.
 
-- Max state tokens: **8,000** (leaves room for system prompt + response)
+- Max state tokens: **15,000** (leaves room for system prompt + response)
 - Priority order: current task > recent steps (last 6) > memory snippets (top 3) > KV vars
 - Older steps are trimmed first. Memory snippets capped at 5.
 - Never frontload the model. Context richness < throughput.
@@ -154,3 +154,27 @@ This becomes Phase 2 training data for the embedding model.
 | `SHELL_TIMEOUT` | `30` | Max seconds for shell commands |
 | `PYTHON_BIN` | `python` | Python executable for Tauri to spawn |
 | `AGENT_SCRIPT` | `./src/api.py` | Agent entry point for Tauri |
+
+---
+
+## Implementation Gaps & Required Tasks
+
+> **CRITICAL DIRECTIVE FOR ALL AGENTS**
+> Stop and ask for direction if you are unsure or unclear. Do not invent directions, paths, or wrapper scripts that are not explicitly authorized.
+
+Currently, it is **impossible** for an autonomous agent spawning with no context to succeed under the strict 15k token limit due to the following structural gaps between the intended design and actual codebase:
+
+### 1. Loop Trigger Gaps (`runner.py`)
+- **Observation Truncation (The Blind Agent):** In `runner.py`, action outcomes are violently truncated: `"result": str(result)[:200]`. If an agent issues `file.read` or `shell.run`, it only gets back 200 characters in the loop's context. It cannot read code or debug effectively.
+  - **Task Needed:** Create a specialized `current_observation` slot in `state.py` that pipes the raw, full result of the *immediately preceding* action (up to 4k tokens) directly into the agent's context, preserving the 200-char limits only for historical `recent_steps`.
+- **No Native Search:**
+  - **Task Needed:** Implement `file.search` (grep) in `executor.py` and `actions.py`. Without this, exploring a repository under a 15k limit by repeatedly running `file.list` and `file.read` is mathematically doomed.
+
+### 2. Task Format Gaps (`tasks.py` & `runner.py`)
+- **Missing Sub-task Execution Handler:** `ActionType.TASK_CREATE` is perfectly defined in `actions.py`, but completely absent in `runner.py`'s `_execute` block. If an agent tries to break down a larger goal into smaller task boundaries (crucial for a 15k context window), the action is swallowed and ignored.
+  - **Task Needed:** Implement the target execution handler for `ActionType.TASK_CREATE` connecting directly to `self.tasks.create()`.
+
+### 3. Memory Format Gaps (`memory.py` & Vector Store)
+- **Dead-Start Indexing Problem:** The `VectorStore` initializes completely empty. Since `file.read` is truncated to 200 characters, the agent cannot manually read and chunk the workspace to store files into memory via `memory.store`. 
+  - **Task Needed:** Implement a workspace-bootstrap hook on runner initialization, OR a dedicated `memory.index_workspace` action that automatically embeds all `.py`/`.md` files in the `AGENT_WORKSPACE`.
+
