@@ -1,7 +1,14 @@
 # Agent Framework
 
-Fully in-house autonomous agent. You own every byte.
-Custom transformer training data pipeline built into the loop itself.
+Fully in-house, entirely offline autonomous agent. You own every byte.
+This repository acts as a dual-value pipeline: it autonomously builds and ships real software stacks while continuously dumping premium transformer training data straight from the execution loop.
+
+## Key Capabilities & Upgrades
+* **Multi-Repo Control Surface:** The live Tauri GUI acts as a centralized command center. You can securely inject external customer repository paths, auto-trigger vector-memory ingestion, and instantly pivot the agent without ever restarting the engine.
+* **15k Token Context Engine:** The `MAX_STATE_TOKENS` is optimized to 15,000, granting the agent a massive observation window to read files and debug.
+* **Native Search & Recursion:** Equipped with cross-repository search utilities and `TASK_CREATE` scaffolding to recursively burn down complex goals.
+* **Dynamic Dataset Metrics:** The GUI tracks live trajectory harvests alongside objective model parameter limits (7B, 15B, 30B). It visually monitors byte payload sizes and alerts you the second your fine-tuning dataset is structurally ready.
+* **Real-Time Backend Trace:** An intercepted Python root logger actively pipes all raw execution traces and system limits safely into the Frontend DOM over JSON lines.
 
 ## How to Use Agent (Bootstrap Sequence)
 
