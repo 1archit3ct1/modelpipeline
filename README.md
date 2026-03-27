@@ -3,6 +3,22 @@
 Fully in-house autonomous agent. You own every byte.
 Custom transformer training data pipeline built into the loop itself.
 
+## How to Use Agent (Bootstrap Sequence)
+
+Because the agent framework requires the agent to fix its own initialization blind spots natively, we use a sequenced approach. Run the following prompts via the CLI in order:
+
+**Prompt 1: Un-blinding the Agent**
+This prompt orders the agent to fix its own state truncation limit, allowing it to "see" its environment fully.
+```bash
+python tools/cli.py run "Fix the Observation Truncation blind spot in runner.py and state.py by passing the raw execution result into context"
+```
+
+**Prompt 2: Building Core Tools**
+Once the agent's engine restarts and it can see 4k context blocks, instruct it to build the cross-repository native search. 
+```bash
+python tools/cli.py run "Implement a file.search grep tool in executor.py and actions.py allowing precise code retrieval"
+```
+
 ## Stack
 
 | Layer | Tech |
