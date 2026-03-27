@@ -26,6 +26,23 @@ class ActionType(str, Enum):
     # Shell
     SHELL_RUN     = "shell.run"
 
+    # Testing
+    TEST_RUN      = "test.run"
+
+    # Package management
+    PIP_INSTALL   = "pip.install"
+    PIP_FREEZE    = "pip.freeze"
+
+    # Code quality
+    LINT_RUN      = "lint.run"
+    SECURITY_SCAN = "security.scan"
+
+    # Git / Version control
+    GIT_INIT      = "git.init"
+    GIT_COMMIT    = "git.commit"
+    GIT_STATUS    = "git.status"
+    GIT_DIFF      = "git.diff"
+
     # Memory
     MEMORY_STORE         = "memory.store"
     MEMORY_QUERY         = "memory.query"
@@ -137,6 +154,15 @@ REQUIRED_PARAMS: Dict[ActionType, List[str]] = {
     ActionType.FILE_DELETE:   ["path"],
     ActionType.FILE_SEARCH:   ["pattern"],
     ActionType.SHELL_RUN:     ["cmd"],
+    ActionType.TEST_RUN:      [],  # all params optional
+    ActionType.PIP_INSTALL:   ["packages"],
+    ActionType.PIP_FREEZE:    [],
+    ActionType.LINT_RUN:      [],
+    ActionType.SECURITY_SCAN: [],
+    ActionType.GIT_INIT:      [],
+    ActionType.GIT_COMMIT:    ["message"],
+    ActionType.GIT_STATUS:    [],
+    ActionType.GIT_DIFF:      [],
     ActionType.MEMORY_STORE:  ["text"],
     ActionType.MEMORY_QUERY:  ["query"],
     ActionType.MEMORY_INDEX_WORKSPACE: [],  # all params optional

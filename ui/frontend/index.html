@@ -126,6 +126,12 @@
     }
     .artifact:hover { transform: translateX(3px); filter: brightness(1.2); }
 
+    .artifact.gray {
+      border-color: var(--border);
+      background: var(--bg3);
+      box-shadow: none;
+    }
+
     .artifact.red {
       border-color: var(--red);
       background: var(--red-dim);
@@ -143,6 +149,7 @@
       font-size: 10px;
       letter-spacing: 1px;
     }
+    .artifact.gray  .art-label { color: var(--text-dim); }
     .artifact.red  .art-label { color: var(--red); }
     .artifact.green .art-label { color: var(--green); }
 
@@ -161,6 +168,7 @@
       height: 7px;
       border-radius: 50%;
     }
+    .artifact.gray  .art-status { background: var(--text-dim); }
     .artifact.red  .art-status { background: var(--red);   animation: pulse-red 2s infinite; }
     .artifact.green .art-status { background: var(--green); animation: pulse-green 3s infinite; }
 
@@ -456,19 +464,19 @@
 
       <div class="section-label">CORE PIPELINE</div>
 
-      <div class="artifact red" id="art-embedder" onclick="showDetail('embedder')">
+      <div class="artifact gray" id="art-embedder" onclick="showDetail('embedder')">
         <div class="art-status"></div>
         <div class="art-label">EMBEDDER</div>
         <div class="art-desc">nomic-embed-text-v1.5<br/>local GPU/CPU · 768-dim</div>
       </div>
 
-      <div class="artifact red" id="art-vectorstore" onclick="showDetail('vectorstore')">
+      <div class="artifact gray" id="art-vectorstore" onclick="showDetail('vectorstore')">
         <div class="art-status"></div>
         <div class="art-label">VECTOR STORE</div>
         <div class="art-desc">HNSW + numpy + jsonlines<br/>zero external deps</div>
       </div>
 
-      <div class="artifact red" id="art-model-router" onclick="showDetail('model-router')">
+      <div class="artifact gray" id="art-model-router" onclick="showDetail('model-router')">
         <div class="art-status"></div>
         <div class="art-label">MODEL ROUTER</div>
         <div class="art-desc">Ollama / HF / OpenAI<br/>swap without touching loop</div>
@@ -476,19 +484,19 @@
 
       <div class="section-label">AGENT LOOP</div>
 
-      <div class="artifact red" id="art-runner" onclick="showDetail('runner')">
+      <div class="artifact gray" id="art-runner" onclick="showDetail('runner')">
         <div class="art-status"></div>
         <div class="art-label">RUNNER</div>
         <div class="art-desc">main loop · observe→think<br/>→act→store→repeat</div>
       </div>
 
-      <div class="artifact red" id="art-actions" onclick="showDetail('actions')">
+      <div class="artifact gray" id="art-actions" onclick="showDetail('actions')">
         <div class="art-status"></div>
         <div class="art-label">ACTIONS</div>
         <div class="art-desc">schema · parser · validator<br/>file/shell/memory/task</div>
       </div>
 
-      <div class="artifact red" id="art-executor" onclick="showDetail('executor')">
+      <div class="artifact gray" id="art-executor" onclick="showDetail('executor')">
         <div class="art-status"></div>
         <div class="art-label">EXECUTOR</div>
         <div class="art-desc">sandboxed filesystem<br/>shell · path guard</div>
@@ -496,19 +504,19 @@
 
       <div class="section-label">MEMORY + STATE</div>
 
-      <div class="artifact red" id="art-memory" onclick="showDetail('memory')">
+      <div class="artifact gray" id="art-memory" onclick="showDetail('memory')">
         <div class="art-status"></div>
         <div class="art-label">MEMORY</div>
         <div class="art-desc">two-tier KV + vector<br/>no-context resume</div>
       </div>
 
-      <div class="artifact red" id="art-state" onclick="showDetail('state')">
+      <div class="artifact gray" id="art-state" onclick="showDetail('state')">
         <div class="art-status"></div>
         <div class="art-label">STATE SERIALIZER</div>
         <div class="art-desc">token-budget aware<br/>≤8k context enforced</div>
       </div>
 
-      <div class="artifact red" id="art-graph" onclick="showDetail('graph')">
+      <div class="artifact gray" id="art-graph" onclick="showDetail('graph')">
         <div class="art-status"></div>
         <div class="art-label">ARTIFACT GRAPH</div>
         <div class="art-desc">nodes · edges · JSON<br/>red→green lifecycle</div>
@@ -516,19 +524,19 @@
 
       <div class="section-label">TRAINING PIPELINE</div>
 
-      <div class="artifact red" id="art-hooks" onclick="showDetail('hooks')">
+      <div class="artifact gray" id="art-hooks" onclick="showDetail('hooks')">
         <div class="art-status"></div>
         <div class="art-label">HOOKS / EVENTS</div>
         <div class="art-desc">every event = training point<br/>events.jsonl capture</div>
       </div>
 
-      <div class="artifact red" id="art-trajectory" onclick="showDetail('trajectory')">
+      <div class="artifact gray" id="art-trajectory" onclick="showDetail('trajectory')">
         <div class="art-status"></div>
         <div class="art-label">TRAJECTORY CAPTURE</div>
         <div class="art-desc">context→action→result<br/>triplet extraction</div>
       </div>
 
-      <div class="artifact red" id="art-dataset" onclick="showDetail('dataset')">
+      <div class="artifact gray" id="art-dataset" onclick="showDetail('dataset')">
         <div class="art-status"></div>
         <div class="art-label">DATASET FORMATTER</div>
         <div class="art-desc">JSONL · Alpaca · ShareGPT<br/>export on demand</div>
@@ -536,7 +544,7 @@
 
       <div class="section-label">TASKS</div>
 
-      <div class="artifact red" id="art-tasks" onclick="showDetail('tasks')">
+      <div class="artifact gray" id="art-tasks" onclick="showDetail('tasks')">
         <div class="art-status"></div>
         <div class="art-label">TASK MANAGER</div>
         <div class="art-desc">pending→active→done<br/>step log · stats</div>
@@ -544,7 +552,7 @@
 
       <div class="section-label">BRIDGE + UI</div>
 
-      <div class="artifact red" id="art-bridge" onclick="showDetail('bridge')">
+      <div class="artifact gray" id="art-bridge" onclick="showDetail('bridge')">
         <div class="art-status"></div>
         <div class="art-label">STDIN/STDOUT BRIDGE</div>
         <div class="art-desc">Tauri↔Python · JSON lines<br/>run/pause/stop/step</div>
@@ -743,6 +751,17 @@ function handleMessage(msg) {
     const ev = msg.event || '';
     logLine('event', ev.toUpperCase().slice(0,12), JSON.stringify(msg.payload || {}).slice(0,80));
 
+    // Component health-check events (flip GREEN on startup verification)
+    if (ev === 'component.verified') {
+      const comp = msg.payload?.component;
+      if (comp) setGreen(comp);
+    }
+    if (ev === 'component.failed') {
+      const comp = msg.payload?.component;
+      const err = msg.payload?.error;
+      logLine('error', 'COMPONENT FAIL', `${comp}: ${err || 'unknown error'}`);
+    }
+
     // update artifact status based on events
     if (ev === 'memory.stored' || ev === 'memory.retrieved') setGreen('art-memory');
     if (ev === 'model.call')     setGreen('art-model-router');
@@ -901,12 +920,15 @@ function dispatchPrompt(text) {
 function updateSuggestedPrompts() {
   const el = document.getElementById('prompt-suggestions');
   const prompts = [];
-  const isRed = (id) => document.getElementById(id)?.classList.contains('red');
+  const isPending = (id) => {
+    const elem = document.getElementById(id);
+    return elem && (elem.classList.contains('red') || elem.classList.contains('gray'));
+  };
 
-  if (isRed('art-memory'))     prompts.push({ title: 'BOOTSTRAP MEMORY', desc: 'Index workspace files into vector memory for semantic search', key: 'memory' });
-  if (isRed('art-runner'))     prompts.push({ title: 'VERIFY AGENT LOOP', desc: 'Run a diagnostic task to confirm the observe→think→act cycle works', key: 'runner' });
-  if (isRed('art-hooks'))      prompts.push({ title: 'GENERATE TRAINING DATA', desc: 'Execute a deep analysis task to begin capturing training samples', key: 'hooks' });
-  if (isRed('art-vectorstore'))prompts.push({ title: 'TEST VECTOR STORE', desc: 'Store and retrieve test embeddings to verify HNSW index', key: 'vectorstore' });
+  if (isPending('art-memory'))     prompts.push({ title: 'BOOTSTRAP MEMORY', desc: 'Index workspace files into vector memory for semantic search', key: 'memory' });
+  if (isPending('art-runner'))     prompts.push({ title: 'VERIFY AGENT LOOP', desc: 'Run a diagnostic task to confirm the observe→think→act cycle works', key: 'runner' });
+  if (isPending('art-hooks'))      prompts.push({ title: 'GENERATE TRAINING DATA', desc: 'Execute a deep analysis task to begin capturing training samples', key: 'hooks' });
+  if (isPending('art-vectorstore'))prompts.push({ title: 'TEST VECTOR STORE', desc: 'Store and retrieve test embeddings to verify HNSW index', key: 'vectorstore' });
   if (state.sampleCount === 0) prompts.push({ title: 'COLLECT FIRST SAMPLES', desc: 'Run any engineering task to begin populating the training pipeline', key: 'hooks' });
   if (prompts.length === 0)    prompts.push({ title: 'DEEP ENGINEERING', desc: 'All systems GREEN. Run complex architectural analysis for premium training data', key: 'runner' });
 
@@ -921,8 +943,8 @@ function updateSuggestedPrompts() {
 // ── Artifact status ───────────────────────────────────────────────
 function setGreen(id) {
   const el = document.getElementById(id);
-  if (el && el.classList.contains('red')) {
-    el.classList.remove('red');
+  if (el && (el.classList.contains('red') || el.classList.contains('gray'))) {
+    el.classList.remove('red', 'gray');
     el.classList.add('green');
     updateArtifactCounts();
     drawGraph();
@@ -933,8 +955,9 @@ function setGreen(id) {
 function updateArtifactCounts() {
   const greens = document.querySelectorAll('.artifact.green').length;
   const reds   = document.querySelectorAll('.artifact.red').length;
+  const grays  = document.querySelectorAll('.artifact.gray').length;
   document.getElementById('stat-green').textContent = greens;
-  document.getElementById('stat-red').textContent   = reds;
+  document.getElementById('stat-red').textContent   = reds + grays;  // Show pending as "not yet verified"
 }
 
 // ── Loop control ──────────────────────────────────────────────────
@@ -1110,8 +1133,8 @@ window.addEventListener('load', () => {
   drawGraph();
   updateArtifactCounts();
   updateSuggestedPrompts();
-  logLine('step', 'INIT', 'GUI roadmap loaded — all artifacts RED (unbuilt)');
-  logLine('think', 'INFO', 'Connect Python backend via Tauri to begin');
+  logLine('step', 'INIT', 'GUI roadmap loaded — all artifacts GRAY (pending verification)');
+  logLine('think', 'INFO', 'Start Python backend — components will flip GREEN on import verification');
 
   // listen for Tauri events if available
   if (window.__TAURI__) {

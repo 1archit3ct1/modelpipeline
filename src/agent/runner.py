@@ -27,6 +27,15 @@ Available actions:
 - file.list:     {"action": "file.list", "path": "..."}
 - file.search:   {"action": "file.search", "pattern": "...", "path": ".", "include_pattern": "*.py"}
 - shell.run:     {"action": "shell.run", "cmd": "..."}
+- test.run:      {"action": "test.run", "path": ".", "framework": "pytest"}
+- pip.install:   {"action": "pip.install", "packages": ["requests", "flask"]}
+- pip.freeze:    {"action": "pip.freeze", "output": "requirements.txt"}
+- lint.run:      {"action": "lint.run", "path": ".", "linter": "flake8"}
+- security.scan: {"action": "security.scan", "path": "."}
+- git.init:      {"action": "git.init"}
+- git.commit:    {"action": "git.commit", "message": "...", "files": ["file1.py", "file2.py"]}
+- git.status:    {"action": "git.status"}
+- git.diff:      {"action": "git.diff", "path": "."}
 - memory.store:  {"action": "memory.store", "text": "..."}
 - memory.query:  {"action": "memory.query", "query": "...", "top_k": 5, "strategy": "cosine", "mmr_lambda": 0.7}
 - memory.index_workspace: {"action": "memory.index_workspace", "workspace": "./workspace", "chunk_size": 500, "chunk_overlap": 50}
@@ -175,6 +184,12 @@ class AgentRunner:
             # ── model call ─────────────────────────────────────────────────
             try:
                 raw_output = self.model.call(messages, max_tokens=512, temperature=0.2)
+                # Emit full reasoning chain for training data (before parsing)
+                self._emit(self._Event.MODEL_REASONING, {
+                    "step": step,
+                    "raw_output": raw_output,
+                    "context_hash": hash(context_str) % 1000000,
+                })
             except Exception as e:
                 logger.error(f"Model call failed: {e}")
                 self._bridge("error", {"error": str(e)})
@@ -188,6 +203,7 @@ class AgentRunner:
             for action in actions:
                 if not action.valid:
                     self._bridge("action_invalid", action.to_dict())
+                    self._emit(self._Event.ACTION_INVALID, action.to_dict())
                     continue
 
                 self._emit(self._Event.ACTION_PROPOSED, action.to_dict())
@@ -208,12 +224,21 @@ class AgentRunner:
                 recent_steps.append(step_record)
                 self.tasks.add_step(task.id, step_record)
 
-                # capture training sample
+                # capture training sample — full context and result for quality training data
                 self._emit(self._Event.TRAINING_SAMPLE, {
                     "step": step,
-                    "context": context_str[:500],
+                    "context": context_str[:4000],  # full context (15k token budget allows this)
                     "action": action.to_dict(),
-                    "result": str(result)[:200],
+                    "result": str(result)[:2000],    # meaningful result, not truncated
+                    "full_state_available": True,
+                    "quality_signals": {
+                        "action_succeeded": action.valid,
+                        "action_type": action.type.value,
+                        "task_status": task.status,
+                        "step_in_task": step,
+                        "result_length": len(str(result)),
+                        "is_terminal_action": action.type.value in ("task.complete", "task.fail", "loop.stop"),
+                    },
                 })
 
                 # check for terminal actions
@@ -254,6 +279,42 @@ class AgentRunner:
                 )
             elif t == ActionType.SHELL_RUN:
                 result = self.executor.shell_run(p["cmd"])
+            elif t == ActionType.TEST_RUN:
+                result = self.executor.test_run(
+                    path=p.get("path", "."),
+                    framework=p.get("framework", "pytest"),
+                )
+            elif t == ActionType.PIP_INSTALL:
+                result = self.executor.pip_install(
+                    packages=p.get("packages", []),
+                    venv=p.get("venv"),
+                )
+            elif t == ActionType.PIP_FREEZE:
+                result = self.executor.pip_freeze(
+                    output=p.get("output", "requirements.txt"),
+                )
+            elif t == ActionType.LINT_RUN:
+                result = self.executor.lint_run(
+                    path=p.get("path", "."),
+                    linter=p.get("linter", "flake8"),
+                )
+            elif t == ActionType.SECURITY_SCAN:
+                result = self.executor.security_scan(
+                    path=p.get("path", "."),
+                )
+            elif t == ActionType.GIT_INIT:
+                result = self.executor.git_init()
+            elif t == ActionType.GIT_COMMIT:
+                result = self.executor.git_commit(
+                    message=p.get("message", ""),
+                    files=p.get("files"),
+                )
+            elif t == ActionType.GIT_STATUS:
+                result = self.executor.git_status()
+            elif t == ActionType.GIT_DIFF:
+                result = self.executor.git_diff(
+                    path=p.get("path"),
+                )
             elif t == ActionType.MEMORY_STORE:
                 result = self.memory.store(p["text"], p.get("metadata"))
             elif t == ActionType.MEMORY_QUERY:

@@ -81,6 +81,7 @@ class Event:
     ACTION_VALIDATED  = "action.validated"
     ACTION_EXECUTED   = "action.executed"
     ACTION_FAILED     = "action.failed"
+    ACTION_INVALID    = "action.invalid"
 
     MEMORY_STORED     = "memory.stored"
     MEMORY_RETRIEVED  = "memory.retrieved"
@@ -89,6 +90,7 @@ class Event:
     MODEL_CALL        = "model.call"
     MODEL_RESPONSE    = "model.response"
     MODEL_ERROR       = "model.error"
+    MODEL_REASONING   = "model.reasoning"  # Full reasoning chain including rejected actions
 
     STATE_SAVED       = "state.saved"
     STATE_LOADED      = "state.loaded"

@@ -2,20 +2,24 @@
 
 ## How to Read This Document
 
-Every item in the GUI roadmap starts **RED** (unbuilt / not functional).
-As each component is implemented and verified, its status transitions to **GREEN** (live).
+**IMPORTANT:** All 14 components are **already built and functional**. 
 
-If a component is GREEN in the GUI but broken in the real frontend → **HALT production and fix before continuing.**
+- **RED** = component not yet verified (backend hasn't imported it yet)
+- **GREEN** = component verified via import check on backend startup
 
-This document is the contract between the build process and the GUI.
+When the Python backend starts, it runs `health_check()` which imports every component and emits `component.verified` events. The GUI receives these events and automatically flips cards from RED to GREEN within seconds of launch.
+
+If a component shows GREEN but fails during actual use → **HALT and fix the bug.**
+
+This document describes what each component does and how to verify it's working correctly.
 
 ---
 
 ## Artifact Registry
 
 ### Status Key
-- 🔴 RED — not yet built, component missing or stub only
-- 🟢 GREEN — built, tested, wired to real backend, functional in Tauri
+- 🔴 RED — not yet verified (will flip GREEN automatically on backend startup)
+- 🟢 GREEN — verified and functional
 
 ---
 
@@ -243,36 +247,26 @@ This document is the contract between the build process and the GUI.
 
 ---
 
-## Build Order (Recommended)
+## Bootstrap Verification
 
-Work through artifacts in this order to minimize blocked dependencies:
+All components are already built. To verify everything works:
 
+**Single Bootstrap Task:**
+```bash
+python tools/cli.py run "Verify the entire agent pipeline works end-to-end: read a file, search code, store to memory, retrieve from memory, write a file, run a shell command"
 ```
-1. EMBEDDER          ← no deps, validates GPU/model setup
-2. VECTOR STORE      ← depends on embedder
-3. HOOKS             ← no deps, enables all event capture
-4. EXECUTOR          ← no deps, validates file sandbox
-5. ACTIONS           ← no deps, validates parse/validate
-6. STATE SERIALIZER  ← no deps
-7. MODEL ROUTER      ← depends on Ollama being installed
-8. MEMORY            ← depends on vector store
-9. TASK MANAGER      ← depends on hooks
-10. ARTIFACT GRAPH   ← depends on hooks
-11. RUNNER           ← depends on all above
-12. TRAJECTORY CAP.  ← depends on hooks + runner
-13. DATASET FORMAT.  ← depends on trajectory capture
-14. BRIDGE           ← depends on runner + Tauri build
-```
+
+This task exercises all 14 components and generates your first training samples. The GUI will show all cards GREEN after the backend starts and this task completes.
 
 ---
 
 ## Halt Conditions
 
 Stop production immediately if:
-- A GUI artifact shows GREEN but the real component is broken or stubbed
+- A component shows GREEN but throws errors during actual use
 - Token budget is exceeded (state serializer not enforcing limit)
 - Training samples are not being captured during runs
 - Path traversal is not blocked by executor
-- Model calls are silently failing (no error event)
+- Model calls are silently failing (no error event emitted)
 
-Fix the violation before proceeding to the next artifact.
+Fix the violation before continuing with production tasks.

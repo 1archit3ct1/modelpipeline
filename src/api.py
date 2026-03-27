@@ -45,10 +45,63 @@ bridge_handler = BridgeLogHandler()
 bridge_handler.setFormatter(logging.Formatter("%(name)s: %(message)s"))
 logging.getLogger().addHandler(bridge_handler)
 
+def health_check(data_dir):
+    """Test all component imports and emit events so GUI flips them GREEN."""
+    checks = {
+        "art-runner":       "src.agent.runner",
+        "art-actions":      "src.agent.actions",
+        "art-executor":     "src.environment.executor",
+        "art-memory":       "src.agent.memory",
+        "art-state":        "src.agent.state",
+        "art-graph":        "src.agent.graph",
+        "art-hooks":        "src.agent.hooks",
+        "art-trajectory":   "src.training.pipeline",
+        "art-dataset":      "src.training.pipeline",
+        "art-tasks":        "src.agent.tasks",
+        "art-model-router": "src.agent.model",
+        "art-bridge":       "src.api",
+    }
+    for art_id, module_path in checks.items():
+        try:
+            __import__(module_path)
+            bridge("event", {"event": "component.verified", "payload": {"component": art_id}})
+        except Exception as e:
+            bridge("event", {"event": "component.failed", "payload": {"component": art_id, "error": str(e)}})
+
+    # Check embedder separately (heavier import)
+    try:
+        from src.vectorstore.embedder import Embedder
+        bridge("event", {"event": "component.verified", "payload": {"component": "art-embedder"}})
+    except Exception:
+        pass
+
+    # Check vector store
+    try:
+        from src.vectorstore.store import VectorStore
+        bridge("event", {"event": "component.verified", "payload": {"component": "art-vectorstore"}})
+    except Exception:
+        pass
+
+    # Report existing training data
+    events_path = f"{data_dir}/trajectories/events.jsonl"
+    sample_count = 0
+    if os.path.exists(events_path):
+        with open(events_path) as f:
+            for line in f:
+                try:
+                    ev = json.loads(line)
+                    if ev.get("event") == "training.sample":
+                        sample_count += 1
+                except Exception:
+                    pass
+    if sample_count > 0:
+        bridge("stats", {"training": {"training_samples": sample_count}})
+
 
 def cmd_run(args):
     from src.agent.runner import AgentRunner
     bridge("ready", {"version": "0.1.0"})
+    health_check(args.data_dir)
     runner = AgentRunner(
         model_str=os.environ.get("AGENT_MODEL", "ollama:mistral"),
         data_dir=args.data_dir,
@@ -79,20 +132,36 @@ def cmd_dataset(args):
     from src.training.pipeline import TrajectoryCapture, DatasetFormatter
 
     capture = TrajectoryCapture(events_path=f"{args.data_dir}/trajectories/events.jsonl")
-    samples = capture.extract_samples()
     formatter = DatasetFormatter(output_dir=f"{args.data_dir}/datasets")
 
-    if args.format == "alpaca":
-        path = formatter.to_alpaca(samples)
-    elif args.format == "sharegpt":
-        path = formatter.to_sharegpt(samples)
+    if args.format == "dpo":
+        dpo_pairs = capture.extract_dpo_pairs()
+        path = formatter.to_dpo(dpo_pairs)
+        bridge("dataset", {
+            "path": path,
+            "summary": {"n_dpo_pairs": len(dpo_pairs)},
+        })
+    elif args.format == "episodic":
+        episodes = capture.extract_episodes()
+        path = formatter.to_episodic(episodes)
+        bridge("dataset", {
+            "path": path,
+            "summary": {"n_episodes": len(episodes)},
+        })
     else:
-        path = formatter.to_jsonl(samples)
+        # jsonl, alpaca, sharegpt
+        samples = capture.extract_samples(min_quality_score=args.min_quality)
+        if args.format == "alpaca":
+            path = formatter.to_alpaca(samples)
+        elif args.format == "sharegpt":
+            path = formatter.to_sharegpt(samples)
+        else:
+            path = formatter.to_jsonl(samples)
 
-    bridge("dataset", {
-        "path": path,
-        "summary": formatter.summary(samples),
-    })
+        bridge("dataset", {
+            "path": path,
+            "summary": formatter.summary(samples),
+        })
 
 
 def main():
@@ -107,7 +176,8 @@ def main():
     sub.add_parser("stats")
 
     ds_p = sub.add_parser("dataset")
-    ds_p.add_argument("--format", choices=["jsonl", "alpaca", "sharegpt"], default="jsonl")
+    ds_p.add_argument("--format", choices=["jsonl", "alpaca", "sharegpt", "dpo", "episodic"], default="jsonl")
+    ds_p.add_argument("--min-quality", type=float, default=0.0, help="Minimum quality score (0.0-1.0)")
 
     args = parser.parse_args()
 

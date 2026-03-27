@@ -164,3 +164,108 @@ class Executor:
             return f"ERROR: command timed out after {SHELL_TIMEOUT}s"
         except Exception as e:
             return f"ERROR: {e}"
+
+    # ── Testing ──────────────────────────────────────────────────────────────
+
+    def test_run(self, path: str = ".", framework: str = "pytest") -> str:
+        """Run tests using specified framework (pytest, unittest, etc.)."""
+        if framework == "pytest":
+            cmd = f"pytest {path} -v --tb=short"
+        elif framework == "unittest":
+            cmd = f"python -m unittest discover {path}"
+        else:
+            cmd = f"{framework} {path}"
+        return self.shell_run(cmd)
+
+    # ── Package Management ───────────────────────────────────────────────────
+
+    def pip_install(self, packages: List[str], venv: Optional[str] = None) -> str:
+        """Install Python packages using pip."""
+        if not packages:
+            return "ERROR: no packages specified"
+        pip_cmd = "pip"
+        if venv:
+            venv_path = Path(venv)
+            if os.name == "nt":  # Windows
+                pip_cmd = str(venv_path / "Scripts" / "pip")
+            else:
+                pip_cmd = str(venv_path / "bin" / "pip")
+        cmd = f"{pip_cmd} install {' '.join(packages)}"
+        return self.shell_run(cmd)
+
+    def pip_freeze(self, output: str = "requirements.txt") -> str:
+        """Freeze installed packages to requirements file."""
+        p = self._resolve(output)
+        cmd = "pip freeze"
+        try:
+            result = subprocess.run(
+                cmd,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=SHELL_TIMEOUT,
+                cwd=str(self.workspace),
+            )
+            p.write_text(result.stdout, encoding="utf-8")
+            return f"requirements frozen to {output}"
+        except Exception as e:
+            return f"ERROR: {e}"
+
+    # ── Code Quality ─────────────────────────────────────────────────────────
+
+    def lint_run(self, path: str = ".", linter: str = "flake8") -> str:
+        """Run linter on code."""
+        if linter == "flake8":
+            cmd = f"flake8 {path} --max-line-length=120"
+        elif linter == "pylint":
+            cmd = f"pylint {path}"
+        elif linter == "ruff":
+            cmd = f"ruff check {path}"
+        else:
+            cmd = f"{linter} {path}"
+        return self.shell_run(cmd)
+
+    def security_scan(self, path: str = ".") -> str:
+        """Run security scan using bandit or safety."""
+        # Try bandit first
+        cmd = f"bandit -r {path} -ll"
+        result = self.shell_run(cmd)
+        if "No issues identified" in result or "issues identified: 0" in result:
+            # Also check for known vulnerabilities
+            cmd = "safety check"
+            safety_result = self.shell_run(cmd)
+            if "vulnerabilities found" not in safety_result.lower():
+                return f"Security scan passed:\n{result}\n\nDependencies: {safety_result}"
+        return f"Security scan:\n{result}"
+
+    # ── Git / Version Control ────────────────────────────────────────────────
+
+    def git_init(self) -> str:
+        """Initialize git repository."""
+        cmd = "git init"
+        return self.shell_run(cmd)
+
+    def git_commit(self, message: str, files: Optional[List[str]] = None) -> str:
+        """Commit files to git."""
+        cmds = []
+        if files:
+            for f in files:
+                cmds.append(f"git add {f}")
+        else:
+            cmds.append("git add -A")
+        cmds.append(f'git commit -m "{message}"')
+        results = [self.shell_run(c) for c in cmds]
+        return "\n".join(results)
+
+    def git_status(self) -> str:
+        """Show git status."""
+        cmd = "git status"
+        return self.shell_run(cmd)
+
+    def git_diff(self, path: Optional[str] = None) -> str:
+        """Show git diff."""
+        if path:
+            cmd = f"git diff {path}"
+        else:
+            cmd = "git diff"
+        return self.shell_run(cmd)

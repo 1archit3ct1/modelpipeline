@@ -3,7 +3,9 @@
     "beforeDevCommand": "",
     "beforeBuildCommand": "",
     "devPath": "../frontend",
-    "distDir": "../frontend"
+    "distDir": "../frontend",
+    "withGlobalTauri": true,
+    "watchExclude": ["data/**", "target/**", "**/*.pyc", "**/__pycache__/**"]
   },
   "package": {
     "productName": "agent-framework",

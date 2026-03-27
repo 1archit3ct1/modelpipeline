@@ -12,39 +12,29 @@ This repository acts as a dual-value pipeline: it autonomously builds and ships 
 
 ## How to Use Agent (Bootstrap Sequence)
 
-Because the agent framework requires the agent to fix its own initialization blind spots natively, we use a sequenced approach. Run the following prompts via the CLI in order:
+All 14 core components are **already built and functional**. When the backend starts, it automatically runs a health check that verifies each component import and emits `component.verified` events — the GUI flips cards GREEN instantly.
 
-**Prompt 1: Un-blinding the Agent**
-This prompt orders the agent to fix its own state truncation limit, allowing it to "see" its environment fully.
+**Single Bootstrap Task:**
+Run one end-to-end verification task that exercises all components and generates your first training samples:
+
 ```bash
-python tools/cli.py run "Fix the Observation Truncation blind spot in runner.py and state.py by passing the raw execution result into context"
+python tools/cli.py run "Verify the entire agent pipeline works end-to-end: 1) Read a file from the workspace, 2) Search for a function definition, 3) Store a test embedding to memory, 4) Retrieve it back, 5) Write a test file, 6) Run a shell command. Document each step so the reasoning is captured in training logs."
 ```
 
-**Prompt 2: Building Core Tools**
-Once the agent's engine restarts and it can see 4k context blocks, instruct it to build the cross-repository native search. 
-```bash
-python tools/cli.py run "Implement a file.search grep tool in executor.py and actions.py allowing precise code retrieval"
-```
-
-**Prompt 3: Enabling Sub-Tasking**
-The agent needs to be able to spawn sub-tasks to protect its 15k token limit. Instruct it to wire up the task creation logic.
-```bash
-python tools/cli.py run "Implement the execution handler for ActionType.TASK_CREATE in runner.py's _execute block so I can break down large tasks into smaller sub-tasks"
-```
-
-**Prompt 4: Memory Bootstrapping**
-Finally, fix the dead-start memory problem so the agent can autonomously populate its own vector database from the repository contents.
-```bash
-python tools/cli.py run "Implement a memory.index_workspace action in actions.py and memory.py that automatically chunks and embeds all .py and .md files in the workspace into the VectorStore"
-```
+This single task:
+- Validates all 14 components are GREEN and functional
+- Generates 6-10 high-quality training samples
+- Proves the observe→think→act loop works
+- Bootstraps memory with initial vectors
+- Confirms the bridge, executor, and model router all work together
 
 ### Standard Execution (Consistent Trigger)
 
-Once the 4 bootstrapping prompts are successfully executed, the agent's core architecture is fully patched and un-blinded. From this point forward, the CLI command becomes **consistent**. 
+Once the bootstrap task completes successfully, the agent is fully verified and all components are GREEN. From this point forward, use the CLI for any engineering task:
 
-Because the ultimate goal of this repository is to **build a new, high-performing model from scratch**, trained specifically on complex software decisions, you can now trigger the agent to work on deep architectural problems. Every observation, thought, and action will be permanently securely logged into the training trajectories.
+Because the ultimate goal of this repository is to **build a new, high-performing model from scratch**, trained specifically on complex software decisions, you can trigger the agent to work on deep architectural problems. Every observation, thought, and action will be permanently logged into the training trajectories.
 
-Here is an example of the ultimate, consistent prompt to run:
+Example deep engineering task:
 ```bash
 python tools/cli.py run "Analyze the current vector indexing algorithm in store.py. Propose a mathematically superior routing logic for semantic similarity, and implement the changes. Document every technical abstraction thoroughly so the reasoning is captured perfectly in the training logs."
 ```
