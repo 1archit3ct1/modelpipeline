@@ -21,6 +21,7 @@ class ActionType(str, Enum):
     FILE_EDIT     = "file.edit"
     FILE_DELETE   = "file.delete"
     FILE_LIST     = "file.list"
+    FILE_SEARCH   = "file.search"   # grep search
 
     # Shell
     SHELL_RUN     = "shell.run"
@@ -133,6 +134,7 @@ REQUIRED_PARAMS: Dict[ActionType, List[str]] = {
     ActionType.FILE_READ:     ["path"],
     ActionType.FILE_EDIT:     ["path", "old", "new"],
     ActionType.FILE_DELETE:   ["path"],
+    ActionType.FILE_SEARCH:   ["pattern"],
     ActionType.SHELL_RUN:     ["cmd"],
     ActionType.MEMORY_STORE:  ["text"],
     ActionType.MEMORY_QUERY:  ["query"],

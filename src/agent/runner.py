@@ -25,6 +25,7 @@ Available actions:
 - file.read:     {"action": "file.read", "path": "..."}
 - file.edit:     {"action": "file.edit", "path": "...", "old": "...", "new": "..."}
 - file.list:     {"action": "file.list", "path": "..."}
+- file.search:   {"action": "file.search", "pattern": "...", "path": ".", "include_pattern": "*.py"}
 - shell.run:     {"action": "shell.run", "cmd": "..."}
 - memory.store:  {"action": "memory.store", "text": "..."}
 - memory.query:  {"action": "memory.query", "query": "..."}
@@ -225,6 +226,13 @@ class AgentRunner:
                 result = self.executor.file_delete(p["path"])
             elif t == ActionType.FILE_LIST:
                 result = self.executor.file_list(p.get("path", "."))
+            elif t == ActionType.FILE_SEARCH:
+                result = self.executor.file_search(
+                    pattern=p["pattern"],
+                    path=p.get("path", "."),
+                    include_pattern=p.get("include_pattern"),
+                    max_results=p.get("max_results", 100),
+                )
             elif t == ActionType.SHELL_RUN:
                 result = self.executor.shell_run(p["cmd"])
             elif t == ActionType.MEMORY_STORE:

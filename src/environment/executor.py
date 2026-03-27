@@ -5,6 +5,7 @@ Sandboxed to workspace directory. Shell commands run in subprocess.
 
 from __future__ import annotations
 import os
+import re
 import subprocess
 import logging
 from pathlib import Path
@@ -67,6 +68,80 @@ class Executor:
         if not p.exists():
             return []
         return [str(f.relative_to(self.workspace)) for f in p.rglob("*") if f.is_file()][:200]
+
+    def file_search(
+        self,
+        pattern: str,
+        path: str = ".",
+        include_pattern: Optional[str] = None,
+        max_results: int = 100,
+    ) -> str:
+        """
+        Grep search in files. Returns matching lines with file:line_number prefix.
+        Pure Python implementation for cross-platform compatibility.
+
+        Args:
+            pattern: Regex pattern to search for
+            path: Directory to search in (default: workspace root)
+            include_pattern: Optional glob pattern to filter files (e.g., "*.py")
+            max_results: Maximum number of matching lines to return
+        """
+        p = self._resolve(path)
+        if not p.exists():
+            return f"ERROR: directory not found: {path}"
+
+        try:
+            regex = re.compile(pattern)
+        except re.error as e:
+            return f"ERROR: invalid regex pattern: {e}"
+
+        results = []
+        files_searched = 0
+
+        # Determine which files to search
+        if include_pattern:
+            files = p.rglob(include_pattern)
+        else:
+            files = p.rglob("*")
+
+        for file_path in files:
+            if not file_path.is_file():
+                continue
+            
+            # Skip binary files and large files
+            try:
+                if file_path.stat().st_size > 1_000_000:  # 1MB limit
+                    continue
+            except OSError:
+                continue
+
+            files_searched += 1
+            
+            try:
+                content = file_path.read_text(encoding="utf-8", errors="replace")
+                lines = content.split("\n")
+                
+                for line_num, line in enumerate(lines, 1):
+                    if regex.search(line):
+                        rel_path = file_path.relative_to(self.workspace)
+                        results.append(f"{rel_path}:{line_num}:{line.rstrip()}")
+                        
+                        if len(results) >= max_results:
+                            break
+            except (OSError, IOError):
+                continue  # Skip unreadable files
+            
+            if len(results) >= max_results:
+                break
+
+        if not results:
+            return f"(no matches for pattern: {pattern})"
+
+        output = "\n".join(results)
+        if files_searched > 0 and len(results) >= max_results:
+            output += f"\n...(results limited to {max_results} matches)"
+
+        return output[:4000] if len(output) > 4000 else output
 
     def shell_run(self, cmd: str) -> str:
         # basic safety check
