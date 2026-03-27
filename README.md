@@ -33,9 +33,13 @@ python tools/cli.py run "Implement a memory.index_workspace action in actions.py
 
 ### Standard Execution (Consistent Trigger)
 
-Once the 4 bootstrapping prompts are successfully executed, the agent's core architecture is fully patched and un-blinded! From this point forward, the CLI command becomes **consistent**. You no longer need to evolve the core engine; you simply pass in your actual software engineering goals. The agent will reliably explore, search, sub-task, and memorize to accomplish them:
+Once the 4 bootstrapping prompts are successfully executed, the agent's core architecture is fully patched and un-blinded. From this point forward, the CLI command becomes **consistent**. 
+
+Because the ultimate goal of this repository is to **build a new, high-performing model from scratch**, trained specifically on complex software decisions, you can now trigger the agent to work on deep architectural problems. Every observation, thought, and action will be permanently securely logged into the training trajectories.
+
+Here is an example of the ultimate, consistent prompt to run:
 ```bash
-python tools/cli.py run "Build a React frontend for the auth api"
+python tools/cli.py run "Analyze the current vector indexing algorithm in store.py. Propose a mathematically superior routing logic for semantic similarity, and implement the changes. Document every technical abstraction thoroughly so the reasoning is captured perfectly in the training logs."
 ```
 
 ## Stack
