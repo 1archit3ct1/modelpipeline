@@ -4,8 +4,7 @@
     "beforeBuildCommand": "",
     "devPath": "../frontend",
     "distDir": "../frontend",
-    "withGlobalTauri": true,
-    "watchExclude": ["data/**", "target/**", "**/*.pyc", "**/__pycache__/**"]
+    "withGlobalTauri": true
   },
   "package": {
     "productName": "agent-framework",
@@ -14,8 +13,25 @@
   "tauri": {
     "allowlist": {
       "all": false,
-      "shell": { "all": false, "open": true },
-      "window": { "all": false, "close": true, "hide": true, "show": true, "maximize": true, "minimize": true, "unmaximize": true, "unminimize": true, "startDragging": true, "setSize": true, "setPosition": true, "setTitle": true, "setFocus": true }
+      "shell": {
+        "all": false,
+        "open": true
+      },
+      "window": {
+        "all": false,
+        "close": true,
+        "hide": true,
+        "show": true,
+        "maximize": true,
+        "minimize": true,
+        "unmaximize": true,
+        "unminimize": true,
+        "startDragging": true,
+        "setSize": true,
+        "setPosition": true,
+        "setTitle": true,
+        "setFocus": true
+      }
     },
     "bundle": {
       "active": true,
@@ -25,7 +41,9 @@
         "icons/icon.ico"
       ]
     },
-    "security": { "csp": null },
+    "security": {
+      "csp": null
+    },
     "windows": [
       {
         "label": "main",
@@ -39,5 +57,6 @@
         "decorations": true
       }
     ]
-  }
+  },
+  "plugins": {}
 }

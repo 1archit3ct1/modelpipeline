@@ -70,17 +70,19 @@ def health_check(data_dir):
 
     # Check embedder separately (heavier import)
     try:
-        from src.vectorstore.embedder import Embedder
+        import src.vectorstore.embedder
         bridge("event", {"event": "component.verified", "payload": {"component": "art-embedder"}})
-    except Exception:
-        pass
+    except Exception as e:
+        bridge("event", {"event": "component.failed", "payload": {"component": "art-embedder", "error": str(e)}})
+        logger.error(f"Embedder failed to load: {e}")
 
     # Check vector store
     try:
         from src.vectorstore.store import VectorStore
         bridge("event", {"event": "component.verified", "payload": {"component": "art-vectorstore"}})
-    except Exception:
-        pass
+    except Exception as e:
+        bridge("event", {"event": "component.failed", "payload": {"component": "art-vectorstore", "error": str(e)}})
+        logger.error(f"VectorStore failed to load: {e}")
 
     # Report existing training data
     events_path = f"{data_dir}/trajectories/events.jsonl"
