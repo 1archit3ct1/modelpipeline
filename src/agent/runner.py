@@ -28,7 +28,7 @@ Available actions:
 - file.search:   {"action": "file.search", "pattern": "...", "path": ".", "include_pattern": "*.py"}
 - shell.run:     {"action": "shell.run", "cmd": "..."}
 - memory.store:  {"action": "memory.store", "text": "..."}
-- memory.query:  {"action": "memory.query", "query": "..."}
+- memory.query:  {"action": "memory.query", "query": "...", "top_k": 5, "strategy": "cosine", "mmr_lambda": 0.7}
 - memory.index_workspace: {"action": "memory.index_workspace", "workspace": "./workspace", "chunk_size": 500, "chunk_overlap": 50}
 - task.create:   {"action": "task.create", "description": "...", "metadata": {}}
 - task.complete: {"action": "task.complete", "result": "..."}
@@ -240,7 +240,13 @@ class AgentRunner:
             elif t == ActionType.MEMORY_STORE:
                 result = self.memory.store(p["text"], p.get("metadata"))
             elif t == ActionType.MEMORY_QUERY:
-                result = self.memory.retrieve(p["query"], top_k=p.get("top_k", 5))
+                result = self.memory.retrieve(
+                    query=p["query"],
+                    top_k=p.get("top_k", 5),
+                    strategy=p.get("strategy", "cosine"),
+                    mmr_lambda=p.get("mmr_lambda"),
+                    use_normalization=p.get("use_normalization", True),
+                )
             elif t == ActionType.MEMORY_INDEX_WORKSPACE:
                 result = self.memory.index_workspace(
                     workspace=p.get("workspace", "./workspace"),

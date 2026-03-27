@@ -58,10 +58,40 @@ class Memory:
         emit(Event.MEMORY_STORED, {"id": idx, "text": text[:100]})
         return idx
 
-    def retrieve(self, query: str, top_k: int = 5) -> List[Dict]:
+    def retrieve(
+        self,
+        query: str,
+        top_k: int = 5,
+        strategy: str = "cosine",
+        mmr_lambda: Optional[float] = None,
+        use_normalization: bool = True,
+    ) -> List[Dict]:
+        """
+        Retrieve top_k most similar entries to query.
+
+        Args:
+            query: Search query
+            top_k: Number of results
+            strategy: "cosine", "mmr", or "hybrid"
+            mmr_lambda: MMR diversity parameter (0=diverse, 1=relevant)
+            use_normalization: Apply z-score normalization
+
+        Returns:
+            List of metadata dicts with scores
+        """
         from src.agent.hooks import emit, Event
-        results = self._vector.retrieve(query, top_k=top_k)
-        emit(Event.MEMORY_RETRIEVED, {"query": query, "n_results": len(results)})
+        results = self._vector.retrieve(
+            query,
+            top_k=top_k,
+            strategy=strategy,
+            mmr_lambda=mmr_lambda,
+            use_normalization=use_normalization,
+        )
+        emit(Event.MEMORY_RETRIEVED, {
+            "query": query,
+            "n_results": len(results),
+            "strategy": strategy,
+        })
         return results
 
     # ── Resume context ───────────────────────────────────────────────────────
