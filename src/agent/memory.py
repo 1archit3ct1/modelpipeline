@@ -83,3 +83,136 @@ class Memory:
             "kv_keys": len(self._kv),
             "vector": self._vector.stats(),
         }
+
+    def index_workspace(
+        self,
+        workspace: str = "./workspace",
+        chunk_size: int = 500,
+        chunk_overlap: int = 50,
+        extensions: Optional[List[str]] = None,
+    ) -> Dict[str, int]:
+        """
+        Automatically chunk and embed all source files in workspace into VectorStore.
+
+        Args:
+            workspace: Path to workspace directory
+            chunk_size: Characters per chunk (default: 500)
+            chunk_overlap: Overlap between chunks (default: 50)
+            extensions: File extensions to index (default: [".py", ".md"])
+
+        Returns:
+            Dict with stats: {"files_processed": N, "chunks_created": M}
+        """
+        from src.agent.hooks import emit, Event
+
+        if extensions is None:
+            extensions = [".py", ".md"]
+
+        workspace_path = Path(workspace)
+        if not workspace_path.exists():
+            return {"files_processed": 0, "chunks_created": 0, "error": "workspace not found"}
+
+        files_processed = 0
+        chunks_created = 0
+
+        for ext in extensions:
+            for file_path in workspace_path.rglob(f"*{ext}"):
+                if not file_path.is_file():
+                    continue
+
+                try:
+                    content = file_path.read_text(encoding="utf-8", errors="replace")
+                    if not content.strip():
+                        continue
+
+                    # Chunk the file content
+                    chunks = self._chunk_text(
+                        content,
+                        chunk_size=chunk_size,
+                        chunk_overlap=chunk_overlap,
+                        file_path=str(file_path.relative_to(workspace_path)),
+                    )
+
+                    for chunk in chunks:
+                        self.store(
+                            text=chunk["text"],
+                            metadata={
+                                "type": "file_chunk",
+                                "file": chunk["file_path"],
+                                "chunk_index": chunk["chunk_index"],
+                                "total_chunks": chunk["total_chunks"],
+                                "extension": ext,
+                            },
+                        )
+                        chunks_created += 1
+
+                    files_processed += 1
+
+                except Exception as e:
+                    logger.warning(f"Failed to index {file_path}: {e}")
+
+        result = {
+            "files_processed": files_processed,
+            "chunks_created": chunks_created,
+        }
+
+        emit(Event.MEMORY_INDEXED, result)
+        return result
+
+    def _chunk_text(
+        self,
+        text: str,
+        chunk_size: int = 500,
+        chunk_overlap: int = 50,
+        file_path: str = "",
+    ) -> List[Dict[str, Any]]:
+        """
+        Split text into overlapping chunks.
+        Attempts to split on line boundaries for cleaner chunks.
+        """
+        if len(text) <= chunk_size:
+            return [
+                {
+                    "text": text,
+                    "file_path": file_path,
+                    "chunk_index": 0,
+                    "total_chunks": 1,
+                }
+            ]
+
+        chunks = []
+        start = 0
+        chunk_index = 0
+
+        while start < len(text):
+            end = start + chunk_size
+
+            # If not at end of text, try to break at newline
+            if end < len(text):
+                # Look for last newline within chunk
+                last_newline = text.rfind("\n", start, end)
+                if last_newline > start:
+                    end = last_newline + 1
+
+            chunk_text = text[start:end].strip()
+            if chunk_text:
+                chunks.append(
+                    {
+                        "text": chunk_text,
+                        "file_path": file_path,
+                        "chunk_index": chunk_index,
+                        "total_chunks": -1,  # will update at end
+                    }
+                )
+                chunk_index += 1
+
+            # Move start with overlap
+            start = end - chunk_overlap
+            if start >= len(text):
+                break
+
+        # Update total_chunks
+        for chunk in chunks:
+            chunk["total_chunks"] = len(chunks)
+
+        return chunks

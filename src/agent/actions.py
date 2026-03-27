@@ -27,8 +27,9 @@ class ActionType(str, Enum):
     SHELL_RUN     = "shell.run"
 
     # Memory
-    MEMORY_STORE  = "memory.store"
-    MEMORY_QUERY  = "memory.query"
+    MEMORY_STORE         = "memory.store"
+    MEMORY_QUERY         = "memory.query"
+    MEMORY_INDEX_WORKSPACE = "memory.index_workspace"
 
     # Task control
     TASK_CREATE   = "task.create"
@@ -138,6 +139,7 @@ REQUIRED_PARAMS: Dict[ActionType, List[str]] = {
     ActionType.SHELL_RUN:     ["cmd"],
     ActionType.MEMORY_STORE:  ["text"],
     ActionType.MEMORY_QUERY:  ["query"],
+    ActionType.MEMORY_INDEX_WORKSPACE: [],  # all params optional
     ActionType.TASK_CREATE:   ["description"],
     ActionType.RESPOND:       ["text"],
 }

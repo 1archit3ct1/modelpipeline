@@ -29,6 +29,7 @@ Available actions:
 - shell.run:     {"action": "shell.run", "cmd": "..."}
 - memory.store:  {"action": "memory.store", "text": "..."}
 - memory.query:  {"action": "memory.query", "query": "..."}
+- memory.index_workspace: {"action": "memory.index_workspace", "workspace": "./workspace", "chunk_size": 500, "chunk_overlap": 50}
 - task.create:   {"action": "task.create", "description": "...", "metadata": {}}
 - task.complete: {"action": "task.complete", "result": "..."}
 - task.fail:     {"action": "task.fail", "error": "..."}
@@ -240,6 +241,13 @@ class AgentRunner:
                 result = self.memory.store(p["text"], p.get("metadata"))
             elif t == ActionType.MEMORY_QUERY:
                 result = self.memory.retrieve(p["query"], top_k=p.get("top_k", 5))
+            elif t == ActionType.MEMORY_INDEX_WORKSPACE:
+                result = self.memory.index_workspace(
+                    workspace=p.get("workspace", "./workspace"),
+                    chunk_size=p.get("chunk_size", 500),
+                    chunk_overlap=p.get("chunk_overlap", 50),
+                    extensions=p.get("extensions"),
+                )
             elif t == ActionType.TASK_CREATE:
                 result = self.tasks.create(p["description"], p.get("metadata"))
                 self._bridge("task_created", {"task_id": result.id, "description": result.description})

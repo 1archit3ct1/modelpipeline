@@ -84,6 +84,7 @@ class Event:
 
     MEMORY_STORED     = "memory.stored"
     MEMORY_RETRIEVED  = "memory.retrieved"
+    MEMORY_INDEXED    = "memory.indexed"
 
     MODEL_CALL        = "model.call"
     MODEL_RESPONSE    = "model.response"
