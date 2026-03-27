@@ -22,7 +22,6 @@ fn spawn_python(app: AppHandle, proc_state: ProcState) {
     let mut child = Command::new(&python)
         .arg(&script)
         .arg("run")
-        .arg("--task")
         .arg("agent ready")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -57,16 +56,18 @@ fn spawn_python(app: AppHandle, proc_state: ProcState) {
 #[tauri::command]
 fn send_cmd(
     cmd: String,
-    extra: Option<serde_json::Value>,
+    extra: Option<String>,
     proc: State<ProcState>,
 ) -> Result<(), String> {
     let mut p = proc.lock().map_err(|e| e.to_string())?;
     if let Some(stdin) = p.stdin.as_mut() {
         let mut msg = serde_json::json!({ "cmd": cmd });
         if let Some(e) = extra {
-            if let serde_json::Value::Object(map) = e {
-                if let serde_json::Value::Object(ref mut m) = msg {
-                    m.extend(map);
+            if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&e) {
+                if let serde_json::Value::Object(map) = parsed {
+                    if let serde_json::Value::Object(ref mut m) = msg {
+                        m.extend(map);
+                    }
                 }
             }
         }

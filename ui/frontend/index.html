@@ -120,10 +120,11 @@
       padding: 8px 10px;
       margin-bottom: 6px;
       font-size: 11px;
-      cursor: default;
+      cursor: pointer;
       transition: all 0.3s ease;
       position: relative;
     }
+    .artifact:hover { transform: translateX(3px); filter: brightness(1.2); }
 
     .artifact.red {
       border-color: var(--red);
@@ -189,6 +190,51 @@
       overflow: hidden;
       border-right: 1px solid var(--border);
     }
+
+    /* ── DETAIL PANEL (replaces graph on click) ─────────────────── */
+    #detail-panel {
+      display: none;
+      flex-direction: column;
+      padding: 16px;
+      overflow-y: auto;
+      background: var(--bg);
+    }
+    #detail-panel.active { display: flex; }
+    #detail-panel .detail-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    #detail-panel .detail-title {
+      font-size: 13px; font-weight: 700; letter-spacing: 1px;
+    }
+    #detail-panel .detail-close {
+      background: var(--bg3); border: 1px solid var(--border); color: var(--text-dim);
+      font-family: var(--font); font-size: 10px; padding: 4px 10px;
+      cursor: pointer; border-radius: 3px;
+    }
+    .detail-section { margin-bottom: 14px; }
+    .detail-section-title {
+      font-size: 9px; letter-spacing: 2px; color: var(--text-dim);
+      border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 6px;
+    }
+    .detail-metric {
+      display: flex; justify-content: space-between; font-size: 10px;
+      padding: 3px 0; border-bottom: 1px solid rgba(42,42,58,0.3);
+    }
+    .detail-metric .dm-label { color: var(--text-dim); }
+    .detail-metric .dm-value { color: var(--accent); font-weight: 700; }
+    .detail-code {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 3px;
+      padding: 8px; font-size: 10px; color: var(--text-dim); white-space: pre-wrap;
+      max-height: 120px; overflow-y: auto;
+    }
+    .prompt-card {
+      background: var(--bg3); border: 1px solid var(--border); border-radius: 4px;
+      padding: 8px 10px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s;
+    }
+    .prompt-card:hover { border-color: var(--accent); transform: translateX(2px); }
+    .prompt-card .pc-title { font-size: 10px; color: var(--accent); font-weight: 700; margin-bottom: 2px; }
+    .prompt-card .pc-desc { font-size: 9px; color: var(--text-dim); }
 
     /* ── GRAPH VIEW ─────────────────────────────────────────────── */
     #graph-area {
@@ -410,19 +456,19 @@
 
       <div class="section-label">CORE PIPELINE</div>
 
-      <div class="artifact red" id="art-embedder">
+      <div class="artifact red" id="art-embedder" onclick="showDetail('embedder')">
         <div class="art-status"></div>
         <div class="art-label">EMBEDDER</div>
         <div class="art-desc">nomic-embed-text-v1.5<br/>local GPU/CPU · 768-dim</div>
       </div>
 
-      <div class="artifact red" id="art-vectorstore">
+      <div class="artifact red" id="art-vectorstore" onclick="showDetail('vectorstore')">
         <div class="art-status"></div>
         <div class="art-label">VECTOR STORE</div>
         <div class="art-desc">HNSW + numpy + jsonlines<br/>zero external deps</div>
       </div>
 
-      <div class="artifact red" id="art-model-router">
+      <div class="artifact red" id="art-model-router" onclick="showDetail('model-router')">
         <div class="art-status"></div>
         <div class="art-label">MODEL ROUTER</div>
         <div class="art-desc">Ollama / HF / OpenAI<br/>swap without touching loop</div>
@@ -430,19 +476,19 @@
 
       <div class="section-label">AGENT LOOP</div>
 
-      <div class="artifact red" id="art-runner">
+      <div class="artifact red" id="art-runner" onclick="showDetail('runner')">
         <div class="art-status"></div>
         <div class="art-label">RUNNER</div>
         <div class="art-desc">main loop · observe→think<br/>→act→store→repeat</div>
       </div>
 
-      <div class="artifact red" id="art-actions">
+      <div class="artifact red" id="art-actions" onclick="showDetail('actions')">
         <div class="art-status"></div>
         <div class="art-label">ACTIONS</div>
         <div class="art-desc">schema · parser · validator<br/>file/shell/memory/task</div>
       </div>
 
-      <div class="artifact red" id="art-executor">
+      <div class="artifact red" id="art-executor" onclick="showDetail('executor')">
         <div class="art-status"></div>
         <div class="art-label">EXECUTOR</div>
         <div class="art-desc">sandboxed filesystem<br/>shell · path guard</div>
@@ -450,19 +496,19 @@
 
       <div class="section-label">MEMORY + STATE</div>
 
-      <div class="artifact red" id="art-memory">
+      <div class="artifact red" id="art-memory" onclick="showDetail('memory')">
         <div class="art-status"></div>
         <div class="art-label">MEMORY</div>
         <div class="art-desc">two-tier KV + vector<br/>no-context resume</div>
       </div>
 
-      <div class="artifact red" id="art-state">
+      <div class="artifact red" id="art-state" onclick="showDetail('state')">
         <div class="art-status"></div>
         <div class="art-label">STATE SERIALIZER</div>
         <div class="art-desc">token-budget aware<br/>≤8k context enforced</div>
       </div>
 
-      <div class="artifact red" id="art-graph">
+      <div class="artifact red" id="art-graph" onclick="showDetail('graph')">
         <div class="art-status"></div>
         <div class="art-label">ARTIFACT GRAPH</div>
         <div class="art-desc">nodes · edges · JSON<br/>red→green lifecycle</div>
@@ -470,19 +516,19 @@
 
       <div class="section-label">TRAINING PIPELINE</div>
 
-      <div class="artifact red" id="art-hooks">
+      <div class="artifact red" id="art-hooks" onclick="showDetail('hooks')">
         <div class="art-status"></div>
         <div class="art-label">HOOKS / EVENTS</div>
         <div class="art-desc">every event = training point<br/>events.jsonl capture</div>
       </div>
 
-      <div class="artifact red" id="art-trajectory">
+      <div class="artifact red" id="art-trajectory" onclick="showDetail('trajectory')">
         <div class="art-status"></div>
         <div class="art-label">TRAJECTORY CAPTURE</div>
         <div class="art-desc">context→action→result<br/>triplet extraction</div>
       </div>
 
-      <div class="artifact red" id="art-dataset">
+      <div class="artifact red" id="art-dataset" onclick="showDetail('dataset')">
         <div class="art-status"></div>
         <div class="art-label">DATASET FORMATTER</div>
         <div class="art-desc">JSONL · Alpaca · ShareGPT<br/>export on demand</div>
@@ -490,7 +536,7 @@
 
       <div class="section-label">TASKS</div>
 
-      <div class="artifact red" id="art-tasks">
+      <div class="artifact red" id="art-tasks" onclick="showDetail('tasks')">
         <div class="art-status"></div>
         <div class="art-label">TASK MANAGER</div>
         <div class="art-desc">pending→active→done<br/>step log · stats</div>
@@ -498,13 +544,13 @@
 
       <div class="section-label">BRIDGE + UI</div>
 
-      <div class="artifact red" id="art-bridge">
+      <div class="artifact red" id="art-bridge" onclick="showDetail('bridge')">
         <div class="art-status"></div>
         <div class="art-label">STDIN/STDOUT BRIDGE</div>
         <div class="art-desc">Tauri↔Python · JSON lines<br/>run/pause/stop/step</div>
       </div>
 
-      <div class="artifact green" id="art-gui">
+      <div class="artifact green" id="art-gui" onclick="showDetail('gui')">
         <div class="art-status"></div>
         <div class="art-label">GUI ROADMAP</div>
         <div class="art-desc">this interface · live<br/>red→green conformance</div>
@@ -513,12 +559,20 @@
     </div>
   </div>
 
-  <!-- CENTER: Graph + Log -->
+  <!-- CENTER: Graph + Detail + Log -->
   <div id="center">
 
     <div id="graph-area">
       <div id="graph-overlay">ARTIFACT GRAPH · LIVE VIEW</div>
       <canvas id="graph-canvas"></canvas>
+    </div>
+
+    <div id="detail-panel">
+      <div class="detail-header">
+        <div class="detail-title" id="detail-title">COMPONENT</div>
+        <button class="detail-close" onclick="closeDetail()">✕ CLOSE</button>
+      </div>
+      <div id="detail-content"></div>
     </div>
 
     <div id="log-area">
@@ -567,8 +621,13 @@
         <option value="ollama:llama3">ollama:llama3 (local)</option>
         <option value="ollama:codellama">ollama:codellama (local)</option>
         <option value="hf:mistral-7b">hf:mistral-7b (local)</option>
-        <option value="openai:gpt-4o">openai:gpt-4o (api)</option>
       </select>
+
+      <div class="section-label">TARGET WORKSPACE</div>
+      <div class="query-wrap">
+        <input class="query-input" id="workspace-input" placeholder="./workspace" />
+        <button class="query-btn" onclick="setWorkspace()">SET</button>
+      </div>
 
       <div class="section-label">TASK QUEUE</div>
       <div id="task-list" style="margin-bottom:8px;">
@@ -582,19 +641,33 @@
       </div>
       <div id="mem-results"></div>
 
-      <div class="section-label">TRAINING PROGRESS</div>
-      <div style="margin-bottom:6px;">
+      <div class="section-label">FINE-TUNE TARGET (DATASET)</div>
+      <div style="margin-bottom:8px;">
+        <select class="model-select" id="tune-target" onchange="updateTrainingProgress()">
+          <option value="5000">7B Parameter Model (5k Samples)</option>
+          <option value="25000">15B Parameter Model (25k Samples)</option>
+          <option value="50000">30B+ Parameter Model (50k Samples)</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:12px;">
         <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim);margin-bottom:4px;">
-          <span>SAMPLES CAPTURED</span>
-          <span id="tp-count">0</span>
+          <span><span id="tp-count">0</span> / <span id="tp-max">5000</span> SAMPLES</span>
+          <span id="tp-size">~0.00 MB</span>
         </div>
-        <div class="progress-bar-wrap">
-          <div class="progress-bar" id="tp-bar"></div>
+        <div class="progress-bar-wrap" style="height:4px; background:var(--bg2); border:1px solid var(--border);">
+          <div class="progress-bar" id="tp-bar" style="background:var(--green); transition:width 0.4s ease-out; width:0%;"></div>
+        </div>
+        <div id="tp-ready-alert" style="display:none; color:var(--green); font-size:9px; margin-top:6px; font-weight:bold; letter-spacing: 1px; text-align:center;">
+          ✓ SUPERVISED FINE-TUNE READY
         </div>
       </div>
       <button class="ctrl-btn" style="width:100%;margin-bottom:4px;" onclick="exportDataset('jsonl')">EXPORT JSONL</button>
       <button class="ctrl-btn" style="width:100%;margin-bottom:4px;" onclick="exportDataset('alpaca')">EXPORT ALPACA</button>
       <button class="ctrl-btn" style="width:100%;" onclick="exportDataset('sharegpt')">EXPORT SHAREGPT</button>
+
+      <div class="section-label" style="margin-top:12px;">SUGGESTED PROMPTS</div>
+      <div id="prompt-suggestions"></div>
 
     </div>
 
@@ -647,7 +720,7 @@ let port = null;  // when real Tauri is wired, use window.__TAURI__
 
 function sendCmd(cmd, extra = {}) {
   if (window.__TAURI__) {
-    window.__TAURI__.tauri.invoke('send_cmd', { cmd, ...extra });
+    window.__TAURI__.tauri.invoke('send_cmd', { cmd, extra: JSON.stringify(extra) });
   } else {
     logLine('think', 'CMD', `→ ${cmd} ${JSON.stringify(extra)}`);
   }
@@ -679,7 +752,7 @@ function handleMessage(msg) {
       state.sampleCount++;
       document.getElementById('stat-samples').textContent = state.sampleCount;
       document.getElementById('tp-count').textContent = state.sampleCount;
-      document.getElementById('tp-bar').style.width = Math.min(state.sampleCount / 10, 100) + '%';
+      updateTrainingProgress();
       setGreen('art-hooks');
       setGreen('art-trajectory');
     }
@@ -703,12 +776,18 @@ function handleMessage(msg) {
     if (msg.training?.training_samples !== undefined) {
       state.sampleCount = msg.training.training_samples;
       document.getElementById('stat-samples').textContent = state.sampleCount;
+      document.getElementById('tp-count').textContent = state.sampleCount;
+      updateTrainingProgress();
     }
     if (msg.tasks) updateTaskList(msg.tasks);
   }
 
   else if (t === 'respond') {
     logLine('event', 'RESPOND', msg.text?.slice(0,120) || '');
+  }
+
+  else if (t === 'backend_log') {
+    logLine('think', 'TRACE', msg.text || '');
   }
 
   else if (t === 'think') {
@@ -729,6 +808,116 @@ function handleMessage(msg) {
   }
 }
 
+// ── Dataset Fine-Tune Metrics ─────────────────────────────────────
+function updateTrainingProgress() {
+  const max = parseInt(document.getElementById('tune-target').value, 10);
+  document.getElementById('tp-max').textContent = max;
+  
+  const pct = Math.min((state.sampleCount / max) * 100, 100);
+  document.getElementById('tp-bar').style.width = pct + '%';
+  
+  // estimate ~3.5KB per complete JSONL triplet
+  const mb = (state.sampleCount * 3.5) / 1024;
+  document.getElementById('tp-size').textContent = `~${mb.toFixed(2)} MB`;
+  
+  const alert = document.getElementById('tp-ready-alert');
+  if (state.sampleCount >= max && max > 0) {
+    alert.style.display = 'block';
+    document.getElementById('tp-bar').style.background = 'var(--accent)';
+  } else {
+    alert.style.display = 'none';
+    document.getElementById('tp-bar').style.background = 'var(--green)';
+  }
+}
+
+// ── Artifact Detail Registry ─────────────────────────────────────
+const ARTIFACT_DETAILS = {
+  'embedder':      { title: 'EMBEDDER', src: 'src/vectorstore/embedder.py', metrics: ['Model: nomic-embed-text-v1.5','Dimensions: 768','Device: GPU/CPU auto'], training: 'Generates embedding vectors for semantic memory. Every vector stored feeds retrieval quality.', prompt: 'Verify the embedding model loads correctly and benchmark inference speed on a 512-token input' },
+  'vectorstore':   { title: 'VECTOR STORE', src: 'src/vectorstore/store.py', metrics: () => [`Vectors: ${state.vectorCount}`, 'Index: HNSW (hnswlib)', 'Storage: numpy + jsonlines'], training: 'Stores all semantic memory. Retrieval log becomes Phase 2 training data for the embedding model.', prompt: 'Analyze the vector indexing algorithm in store.py and propose mathematically superior routing logic for semantic similarity' },
+  'model-router':  { title: 'MODEL ROUTER', src: 'src/agent/model.py', metrics: ['Backend: Ollama (local)', 'Default: mistral', 'Swap: no loop restart'], training: 'Every model call/response pair is a training sample. Higher quality reasoning = higher quality dataset.', prompt: 'Audit the model router for error handling edge cases when Ollama is unreachable or returns malformed JSON' },
+  'runner':        { title: 'RUNNER', src: 'src/agent/runner.py', metrics: () => [`Steps: ${state.step}`, `Max: ${state.maxSteps}`, 'Context: 15k tokens'], training: 'The core loop. Every observe→think→act cycle generates one complete training triplet.', prompt: 'Review the agent loop in runner.py for potential infinite loops or context window overflow scenarios' },
+  'actions':       { title: 'ACTIONS', src: 'src/agent/actions.py', metrics: ['Types: 14 action schemas', 'Validation: JSON strict', 'Parse: regex + json'], training: 'Action schema compliance directly determines training data purity. Invalid actions are filtered out.', prompt: 'Extend the action schema to support a new file.patch action that applies unified diffs to existing files' },
+  'executor':      { title: 'EXECUTOR', src: 'src/environment/executor.py', metrics: ['Sandbox: AGENT_WORKSPACE', 'Timeout: 30s shells', 'Guard: path traversal'], training: 'Every file operation and shell command result feeds back as training context.', prompt: 'Implement path traversal hardening in executor.py to prevent sandbox escape via symlinks or ../ sequences' },
+  'memory':        { title: 'MEMORY', src: 'src/agent/memory.py', metrics: () => [`Vectors: ${state.vectorCount}`, 'KV: key-value store', 'Resume: context rebuild'], training: 'Memory retrieval quality directly impacts training sample coherence. Better retrieval = better training.', prompt: 'Implement a memory.index_workspace action that automatically chunks and embeds all .py and .md files into the VectorStore' },
+  'state':         { title: 'STATE SERIALIZER', src: 'src/agent/state.py', metrics: ['Budget: 15,000 tokens', 'Priority: task > steps > memory', 'Observation: 4k raw'], training: 'Controls what the model sees. Token budget enforcement ensures training samples are dense and focused.', prompt: 'Optimize the state serializer to dynamically allocate token budget based on task complexity and step history' },
+  'graph':         { title: 'ARTIFACT GRAPH', src: 'src/agent/graph.py', metrics: () => { const g = document.querySelectorAll('.artifact.green').length; const r = document.querySelectorAll('.artifact.red').length; return [`Green: ${g}`, `Red: ${r}`, 'Persist: graph.json']; }, training: 'Tracks component lifecycle. RED→GREEN transitions are high-signal training events.', prompt: 'Add dependency edges to the artifact graph so components can declare prerequisites for their GREEN status' },
+  'hooks':         { title: 'HOOKS / EVENTS', src: 'src/agent/hooks.py', metrics: () => [`Samples: ${state.sampleCount}`, 'Output: events.jsonl', 'Bus: emit()'], training: 'THE training data source. Every emit() call writes to the trajectory log that becomes the fine-tuning dataset.', prompt: 'Add a hook that captures the full model reasoning chain including rejected action candidates for richer training data' },
+  'trajectory':    { title: 'TRAJECTORY CAPTURE', src: 'src/training/pipeline.py', metrics: () => [`Extracted: ${state.sampleCount}`, 'Format: (ctx, action, result)', 'Quality: filtered'], training: 'Extracts clean (prompt, completion) pairs from raw events. This is the direct input to fine-tuning.', prompt: 'Implement quality scoring for trajectory samples to automatically filter low-signal training data' },
+  'dataset':       { title: 'DATASET FORMATTER', src: 'src/training/pipeline.py', metrics: ['Formats: JSONL, Alpaca, ShareGPT', 'Export: on-demand', 'Target: fine-tune ready'], training: 'Final formatting stage. Outputs the exact file format consumed by Axolotl, Unsloth, or LLaMA-Factory.', prompt: 'Add a DPO (Direct Preference Optimization) export format that pairs good and bad action choices from the trajectory' },
+  'tasks':         { title: 'TASK MANAGER', src: 'src/agent/tasks.py', metrics: () => [`Active: ${state.taskCount}`, 'Lifecycle: pending→active→done', 'Persist: tasks.jsonl'], training: 'Task boundaries segment training data into coherent episodes. Better segmentation = better fine-tuning.', prompt: 'Implement recursive sub-task decomposition so the agent can break complex goals into manageable 15k-token chunks' },
+  'bridge':        { title: 'STDIN/STDOUT BRIDGE', src: 'src/api.py + ui/src-tauri/src/main.rs', metrics: ['Protocol: JSON lines', 'Direction: bidirectional', 'GUI: Tauri events'], training: 'The bridge itself is infrastructure. Its reliability ensures no training samples are dropped.', prompt: 'Add heartbeat monitoring to the bridge so the GUI can detect and recover from Python backend crashes' },
+  'gui':           { title: 'GUI ROADMAP', src: 'ui/frontend/index.html', metrics: () => { const g = document.querySelectorAll('.artifact.green').length; return [`Interface: live`, `Components: ${g}/15 GREEN`, 'Events: real-time']; }, training: 'The GUI is the control surface. User interactions through it generate high-quality task descriptions for training.', prompt: 'Enhance the GUI with a split-pane Python trace viewer that shows the raw agent reasoning alongside the artifact graph' },
+};
+
+// ── Detail Panel Logic ───────────────────────────────────────────
+function showDetail(key) {
+  const d = ARTIFACT_DETAILS[key];
+  if (!d) return;
+  const panel = document.getElementById('detail-panel');
+  const graph = document.getElementById('graph-area');
+  const el = document.getElementById('art-' + key);
+  const isGreen = el ? el.classList.contains('green') : false;
+  const statusColor = isGreen ? 'var(--green)' : 'var(--red)';
+  const statusText = isGreen ? '● LIVE' : '● UNVERIFIED';
+  const metrics = typeof d.metrics === 'function' ? d.metrics() : d.metrics;
+
+  document.getElementById('detail-title').innerHTML = `<span style="color:${statusColor}">${statusText}</span> ${d.title}`;
+  document.getElementById('detail-content').innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-title">SOURCE FILE</div>
+      <div class="detail-code">${d.src}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">LIVE METRICS</div>
+      ${metrics.map(m => `<div class="detail-metric"><span class="dm-label">${m.split(':')[0]}</span><span class="dm-value">${m.split(':').slice(1).join(':').trim()}</span></div>`).join('')}
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">TRAINING CONTRIBUTION</div>
+      <div style="font-size:10px;color:var(--text-dim);line-height:1.6;">${d.training}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">RECOMMENDED PROMPT</div>
+      <div class="prompt-card" onclick="dispatchPrompt('${escHtml(d.prompt)}')">
+        <div class="pc-title">▶ CLICK TO DISPATCH</div>
+        <div class="pc-desc">${d.prompt}</div>
+      </div>
+    </div>`;
+  graph.style.display = 'none';
+  panel.classList.add('active');
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.remove('active');
+  document.getElementById('graph-area').style.display = '';
+}
+
+function dispatchPrompt(text) {
+  document.getElementById('task-input').value = text;
+  closeDetail();
+  submitTask();
+}
+
+// ── Smart Prompt Generator ───────────────────────────────────────
+function updateSuggestedPrompts() {
+  const el = document.getElementById('prompt-suggestions');
+  const prompts = [];
+  const isRed = (id) => document.getElementById(id)?.classList.contains('red');
+
+  if (isRed('art-memory'))     prompts.push({ title: 'BOOTSTRAP MEMORY', desc: 'Index workspace files into vector memory for semantic search', key: 'memory' });
+  if (isRed('art-runner'))     prompts.push({ title: 'VERIFY AGENT LOOP', desc: 'Run a diagnostic task to confirm the observe→think→act cycle works', key: 'runner' });
+  if (isRed('art-hooks'))      prompts.push({ title: 'GENERATE TRAINING DATA', desc: 'Execute a deep analysis task to begin capturing training samples', key: 'hooks' });
+  if (isRed('art-vectorstore'))prompts.push({ title: 'TEST VECTOR STORE', desc: 'Store and retrieve test embeddings to verify HNSW index', key: 'vectorstore' });
+  if (state.sampleCount === 0) prompts.push({ title: 'COLLECT FIRST SAMPLES', desc: 'Run any engineering task to begin populating the training pipeline', key: 'hooks' });
+  if (prompts.length === 0)    prompts.push({ title: 'DEEP ENGINEERING', desc: 'All systems GREEN. Run complex architectural analysis for premium training data', key: 'runner' });
+
+  el.innerHTML = prompts.slice(0, 4).map(p =>
+    `<div class="prompt-card" onclick="showDetail('${p.key}')">
+      <div class="pc-title">${p.title}</div>
+      <div class="pc-desc">${p.desc}</div>
+    </div>`
+  ).join('');
+}
+
 // ── Artifact status ───────────────────────────────────────────────
 function setGreen(id) {
   const el = document.getElementById(id);
@@ -737,6 +926,7 @@ function setGreen(id) {
     el.classList.add('green');
     updateArtifactCounts();
     drawGraph();
+    updateSuggestedPrompts();
   }
 }
 
@@ -788,6 +978,12 @@ function setModel(val) {
   state.model = val;
   document.getElementById('sb-model').textContent = val;
   sendCmd('set_model', { model: val });
+}
+
+function setWorkspace() {
+  const p = document.getElementById('workspace-input').value.trim();
+  if (!p) return;
+  sendCmd('set_workspace', { path: p });
 }
 
 function submitTask() {
@@ -913,6 +1109,7 @@ function drawGraph() {
 window.addEventListener('load', () => {
   drawGraph();
   updateArtifactCounts();
+  updateSuggestedPrompts();
   logLine('step', 'INIT', 'GUI roadmap loaded — all artifacts RED (unbuilt)');
   logLine('think', 'INFO', 'Connect Python backend via Tauri to begin');
 

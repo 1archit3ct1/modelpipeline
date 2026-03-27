@@ -11,6 +11,10 @@ import json
 import argparse
 import logging
 import os
+from pathlib import Path
+
+# Ensure the root workspace is loaded in the path so deep imports like 'src.agent' always resolve correctly
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # configure logging to stderr only — stdout is reserved for Tauri bridge
 logging.basicConfig(
@@ -22,9 +26,24 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def bridge(type_: str, **data):
+def bridge(type_: str, data: dict = None, **kwargs):
     """Send a structured JSON line to Tauri."""
-    print(json.dumps({"type": type_, **data}), flush=True)
+    combined = data or {}
+    combined.update(kwargs)
+    print(json.dumps({"type": type_, **combined}), flush=True)
+
+class BridgeLogHandler(logging.Handler):
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            if record.name != __name__:
+                bridge("backend_log", {"text": msg})
+        except Exception:
+            pass
+
+bridge_handler = BridgeLogHandler()
+bridge_handler.setFormatter(logging.Formatter("%(name)s: %(message)s"))
+logging.getLogger().addHandler(bridge_handler)
 
 
 def cmd_run(args):

@@ -105,6 +105,23 @@ class AgentRunner:
                     self._step_event.set()
                 elif cmd == "task":
                     self.tasks.create(msg.get("description", "New task"))
+                elif cmd == "set_workspace":
+                    new_ws = msg.get("path")
+                    if new_ws:
+                        import os
+                        from pathlib import Path
+                        os.environ["AGENT_WORKSPACE"] = new_ws
+                        self.executor.workspace = Path(new_ws).resolve()
+                        self.executor.workspace.mkdir(parents=True, exist_ok=True)
+                        self._bridge("step", {"step": self.executor.workspace.name, "max": "Workspace Changed"})
+                        self._bridge("respond", {"text": f"Target workspace switched to: {self.executor.workspace}"})
+                        # Trigger auto-index natively to solve the deadstart requirement
+                        if hasattr(self.memory, "index_workspace"):
+                            try:
+                                self.memory.index_workspace(workspace=str(self.executor.workspace))
+                                self._bridge("respond", {"text": "Successfully auto-indexed the deeply nested workspace structure!"})
+                            except Exception as e:
+                                self._bridge("error", {"error": f"Auto-index failed: {e}"})
             except json.JSONDecodeError:
                 pass
 

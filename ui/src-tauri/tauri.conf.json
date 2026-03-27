@@ -19,7 +19,9 @@
       "active": true,
       "targets": "all",
       "identifier": "com.agentframework.dev",
-      "icon": []
+      "icon": [
+        "icons/icon.ico"
+      ]
     },
     "security": { "csp": null },
     "windows": [
