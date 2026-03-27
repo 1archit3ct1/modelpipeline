@@ -19,6 +19,25 @@ Once the agent's engine restarts and it can see 4k context blocks, instruct it t
 python tools/cli.py run "Implement a file.search grep tool in executor.py and actions.py allowing precise code retrieval"
 ```
 
+**Prompt 3: Enabling Sub-Tasking**
+The agent needs to be able to spawn sub-tasks to protect its 15k token limit. Instruct it to wire up the task creation logic.
+```bash
+python tools/cli.py run "Implement the execution handler for ActionType.TASK_CREATE in runner.py's _execute block so I can break down large tasks into smaller sub-tasks"
+```
+
+**Prompt 4: Memory Bootstrapping**
+Finally, fix the dead-start memory problem so the agent can autonomously populate its own vector database from the repository contents.
+```bash
+python tools/cli.py run "Implement a memory.index_workspace action in actions.py and memory.py that automatically chunks and embeds all .py and .md files in the workspace into the VectorStore"
+```
+
+### Standard Execution (Consistent Trigger)
+
+Once the 4 bootstrapping prompts are successfully executed, the agent's core architecture is fully patched and un-blinded! From this point forward, the CLI command becomes **consistent**. You no longer need to evolve the core engine; you simply pass in your actual software engineering goals. The agent will reliably explore, search, sub-task, and memorize to accomplish them:
+```bash
+python tools/cli.py run "Build a React frontend for the auth api"
+```
+
 ## Stack
 
 | Layer | Tech |
