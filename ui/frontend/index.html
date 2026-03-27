@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Framework</title>
+  <style>
+    :root {
+      --bg:         #0a0a0f;
+      --bg2:        #111118;
+      --bg3:        #1a1a24;
+      --border:     #2a2a3a;
+      --red:        #e63946;
+      --red-glow:   rgba(230,57,70,0.25);
+      --red-dim:    rgba(230,57,70,0.08);
+      --green:      #2ecc71;
+      --green-glow: rgba(46,204,113,0.25);
+      --green-dim:  rgba(46,204,113,0.08);
+      --yellow:     #f39c12;
+      --text:       #e0e0f0;
+      --text-dim:   #666680;
+      --accent:     #7c6aff;
+      --font:       'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 48px 1fr 28px;
+      overflow: hidden;
+    }
+
+    /* ── TOPBAR ─────────────────────────────────────────────────── */
+    #topbar {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+      user-select: none;
+    }
+
+    #topbar .logo {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--accent);
+    }
+
+    #topbar .sep { flex: 1; }
+
+    .ctrl-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 11px;
+      padding: 5px 14px;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: all 0.15s;
+      letter-spacing: 1px;
+    }
+    .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .ctrl-btn.run    { border-color: var(--green); color: var(--green); }
+    .ctrl-btn.run:hover { background: var(--green-dim); }
+    .ctrl-btn.pause  { border-color: var(--yellow); color: var(--yellow); }
+    .ctrl-btn.stop   { border-color: var(--red); color: var(--red); }
+    .ctrl-btn.stop:hover { background: var(--red-dim); }
+    .ctrl-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* ── MAIN LAYOUT ────────────────────────────────────────────── */
+    #main {
+      display: grid;
+      grid-template-columns: 220px 1fr 280px;
+      overflow: hidden;
+    }
+
+    /* ── PANELS ─────────────────────────────────────────────────── */
+    .panel {
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .panel:last-child { border-right: none; }
+
+    .panel-header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 12px;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .panel-body::-webkit-scrollbar { width: 4px; }
+    .panel-body::-webkit-scrollbar-track { background: transparent; }
+    .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ── ARTIFACT ITEMS (red = unbuilt, green = live) ───────────── */
+    .artifact {
+      border: 1px solid;
+      border-radius: 4px;
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      font-size: 11px;
+      cursor: default;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .artifact.red {
+      border-color: var(--red);
+      background: var(--red-dim);
+      box-shadow: 0 0 8px var(--red-glow);
+    }
+
+    .artifact.green {
+      border-color: var(--green);
+      background: var(--green-dim);
+      box-shadow: 0 0 8px var(--green-glow);
+    }
+
+    .artifact .art-label {
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: 1px;
+    }
+    .artifact.red  .art-label { color: var(--red); }
+    .artifact.green .art-label { color: var(--green); }
+
+    .artifact .art-desc {
+      color: var(--text-dim);
+      font-size: 10px;
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+
+    .artifact .art-status {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+    .artifact.red  .art-status { background: var(--red);   animation: pulse-red 2s infinite; }
+    .artifact.green .art-status { background: var(--green); animation: pulse-green 3s infinite; }
+
+    @keyframes pulse-red {
+      0%,100% { box-shadow: 0 0 0 0 var(--red-glow); }
+      50%      { box-shadow: 0 0 0 4px var(--red-glow); }
+    }
+    @keyframes pulse-green {
+      0%,100% { box-shadow: 0 0 0 0 var(--green-glow); }
+      50%      { box-shadow: 0 0 0 4px var(--green-glow); }
+    }
+
+    /* ── SECTION LABELS ─────────────────────────────────────────── */
+    .section-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      padding: 8px 2px 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    /* ── CENTER PANEL ────────────────────────────────────────────── */
+    #center {
+      display: grid;
+      grid-template-rows: 1fr 180px;
+      overflow: hidden;
+      border-right: 1px solid var(--border);
+    }
+
+    /* ── GRAPH VIEW ─────────────────────────────────────────────── */
+    #graph-area {
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    #graph-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    #graph-overlay {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+    }
+
+    /* ── LOG FEED ────────────────────────────────────────────────── */
+    #log-area {
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    #log-feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 10px;
+      font-size: 10px;
+      line-height: 1.7;
+    }
+
+    .log-line { display: flex; gap: 8px; }
+    .log-time { color: var(--text-dim); min-width: 60px; }
+    .log-type { min-width: 70px; font-weight: 700; }
+    .log-type.event  { color: var(--accent); }
+    .log-type.action { color: var(--yellow); }
+    .log-type.error  { color: var(--red); }
+    .log-type.step   { color: var(--green); }
+    .log-type.think  { color: #888; }
+    .log-msg { color: var(--text); word-break: break-all; }
+
+    /* ── RIGHT PANEL ─────────────────────────────────────────────── */
+    #right { border-right: none; }
+
+    /* ── STATS GRID ──────────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .stat-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px;
+      text-align: center;
+    }
+    .stat-val {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .stat-lbl {
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      margin-top: 3px;
+    }
+
+    /* ── TASK INPUT ──────────────────────────────────────────────── */
+    #task-input-wrap {
+      padding: 8px 10px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 6px;
+    }
+
+    #task-input {
+      flex: 1;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 11px;
+      padding: 6px 8px;
+      border-radius: 3px;
+      outline: none;
+    }
+    #task-input:focus { border-color: var(--accent); }
+
+    #task-send {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      font-family: var(--font);
+      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    #task-send:hover { opacity: 0.85; }
+
+    /* ── STATUSBAR ───────────────────────────────────────────────── */
+    #statusbar {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      font-size: 10px;
+      color: var(--text-dim);
+      gap: 16px;
+    }
+
+    #statusbar .sb-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--text-dim);
+    }
+    #statusbar .sb-dot.running { background: var(--green); animation: pulse-green 1.5s infinite; }
+    #statusbar .sb-dot.error   { background: var(--red); }
+
+    .progress-bar-wrap {
+      flex: 1;
+      height: 3px;
+      background: var(--bg3);
+      border-radius: 2px;
+    }
+    .progress-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    /* ── MODEL SELECTOR ──────────────────────────────────────────── */
+    .model-select {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 10px;
+      padding: 4px 8px;
+      border-radius: 3px;
+      outline: none;
+      width: 100%;
+      margin-bottom: 8px;
+    }
+
+    /* ── MEMORY QUERY ────────────────────────────────────────────── */
+    .query-wrap {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .query-input {
+      flex: 1;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 10px;
+      padding: 5px 8px;
+      border-radius: 3px;
+      outline: none;
+    }
+    .query-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      font-family: var(--font);
+      font-size: 10px;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+
+    .memory-result {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 6px 8px;
+      font-size: 10px;
+      margin-bottom: 4px;
+      color: var(--text-dim);
+    }
+    .memory-result .score { color: var(--accent); font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<!-- ── TOPBAR ──────────────────────────────────────────────────── -->
+<div id="topbar">
+  <div class="logo">AGENT·FRAMEWORK</div>
+  <div class="sep"></div>
+  <button class="ctrl-btn" id="btn-step"  onclick="sendCmd('step')">STEP</button>
+  <button class="ctrl-btn pause" id="btn-pause" onclick="togglePause()">PAUSE</button>
+  <button class="ctrl-btn stop"  id="btn-stop"  onclick="sendCmd('stop')">STOP</button>
+  <button class="ctrl-btn run"   id="btn-run"   onclick="startRun()">RUN ▶</button>
+</div>
+
+<!-- ── MAIN ────────────────────────────────────────────────────── -->
+<div id="main">
+
+  <!-- LEFT: Artifact Roadmap -->
+  <div class="panel" id="left">
+    <div class="panel-header">⬡ ARTIFACT ROADMAP</div>
+    <div class="panel-body" id="artifact-list">
+
+      <div class="section-label">CORE PIPELINE</div>
+
+      <div class="artifact red" id="art-embedder">
+        <div class="art-status"></div>
+        <div class="art-label">EMBEDDER</div>
+        <div class="art-desc">nomic-embed-text-v1.5<br/>local GPU/CPU · 768-dim</div>
+      </div>
+
+      <div class="artifact red" id="art-vectorstore">
+        <div class="art-status"></div>
+        <div class="art-label">VECTOR STORE</div>
+        <div class="art-desc">HNSW + numpy + jsonlines<br/>zero external deps</div>
+      </div>
+
+      <div class="artifact red" id="art-model-router">
+        <div class="art-status"></div>
+        <div class="art-label">MODEL ROUTER</div>
+        <div class="art-desc">Ollama / HF / OpenAI<br/>swap without touching loop</div>
+      </div>
+
+      <div class="section-label">AGENT LOOP</div>
+
+      <div class="artifact red" id="art-runner">
+        <div class="art-status"></div>
+        <div class="art-label">RUNNER</div>
+        <div class="art-desc">main loop · observe→think<br/>→act→store→repeat</div>
+      </div>
+
+      <div class="artifact red" id="art-actions">
+        <div class="art-status"></div>
+        <div class="art-label">ACTIONS</div>
+        <div class="art-desc">schema · parser · validator<br/>file/shell/memory/task</div>
+      </div>
+
+      <div class="artifact red" id="art-executor">
+        <div class="art-status"></div>
+        <div class="art-label">EXECUTOR</div>
+        <div class="art-desc">sandboxed filesystem<br/>shell · path guard</div>
+      </div>
+
+      <div class="section-label">MEMORY + STATE</div>
+
+      <div class="artifact red" id="art-memory">
+        <div class="art-status"></div>
+        <div class="art-label">MEMORY</div>
+        <div class="art-desc">two-tier KV + vector<br/>no-context resume</div>
+      </div>
+
+      <div class="artifact red" id="art-state">
+        <div class="art-status"></div>
+        <div class="art-label">STATE SERIALIZER</div>
+        <div class="art-desc">token-budget aware<br/>≤8k context enforced</div>
+      </div>
+
+      <div class="artifact red" id="art-graph">
+        <div class="art-status"></div>
+        <div class="art-label">ARTIFACT GRAPH</div>
+        <div class="art-desc">nodes · edges · JSON<br/>red→green lifecycle</div>
+      </div>
+
+      <div class="section-label">TRAINING PIPELINE</div>
+
+      <div class="artifact red" id="art-hooks">
+        <div class="art-status"></div>
+        <div class="art-label">HOOKS / EVENTS</div>
+        <div class="art-desc">every event = training point<br/>events.jsonl capture</div>
+      </div>
+
+      <div class="artifact red" id="art-trajectory">
+        <div class="art-status"></div>
+        <div class="art-label">TRAJECTORY CAPTURE</div>
+        <div class="art-desc">context→action→result<br/>triplet extraction</div>
+      </div>
+
+      <div class="artifact red" id="art-dataset">
+        <div class="art-status"></div>
+        <div class="art-label">DATASET FORMATTER</div>
+        <div class="art-desc">JSONL · Alpaca · ShareGPT<br/>export on demand</div>
+      </div>
+
+      <div class="section-label">TASKS</div>
+
+      <div class="artifact red" id="art-tasks">
+        <div class="art-status"></div>
+        <div class="art-label">TASK MANAGER</div>
+        <div class="art-desc">pending→active→done<br/>step log · stats</div>
+      </div>
+
+      <div class="section-label">BRIDGE + UI</div>
+
+      <div class="artifact red" id="art-bridge">
+        <div class="art-status"></div>
+        <div class="art-label">STDIN/STDOUT BRIDGE</div>
+        <div class="art-desc">Tauri↔Python · JSON lines<br/>run/pause/stop/step</div>
+      </div>
+
+      <div class="artifact green" id="art-gui">
+        <div class="art-status"></div>
+        <div class="art-label">GUI ROADMAP</div>
+        <div class="art-desc">this interface · live<br/>red→green conformance</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CENTER: Graph + Log -->
+  <div id="center">
+
+    <div id="graph-area">
+      <div id="graph-overlay">ARTIFACT GRAPH · LIVE VIEW</div>
+      <canvas id="graph-canvas"></canvas>
+    </div>
+
+    <div id="log-area">
+      <div class="panel-header">⬡ EVENT LOG</div>
+      <div id="log-feed"></div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Stats + Controls + Memory -->
+  <div class="panel" id="right">
+    <div class="panel-header">⬡ METRICS + CONTROL</div>
+    <div class="panel-body">
+
+      <div class="section-label">LOOP STATUS</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-val" id="stat-step">0</div>
+          <div class="stat-lbl">STEPS</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-tasks">0</div>
+          <div class="stat-lbl">TASKS</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-vectors">0</div>
+          <div class="stat-lbl">VECTORS</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-samples">0</div>
+          <div class="stat-lbl">TRAIN SAMPLES</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-green">1</div>
+          <div class="stat-lbl">GREEN</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-red">14</div>
+          <div class="stat-lbl">RED</div>
+        </div>
+      </div>
+
+      <div class="section-label">MODEL ROUTER</div>
+      <select class="model-select" id="model-select" onchange="setModel(this.value)">
+        <option value="ollama:mistral">ollama:mistral (local)</option>
+        <option value="ollama:llama3">ollama:llama3 (local)</option>
+        <option value="ollama:codellama">ollama:codellama (local)</option>
+        <option value="hf:mistral-7b">hf:mistral-7b (local)</option>
+        <option value="openai:gpt-4o">openai:gpt-4o (api)</option>
+      </select>
+
+      <div class="section-label">TASK QUEUE</div>
+      <div id="task-list" style="margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--text-dim);">no tasks yet</div>
+      </div>
+
+      <div class="section-label">MEMORY QUERY</div>
+      <div class="query-wrap">
+        <input class="query-input" id="mem-query" placeholder="query memory…" />
+        <button class="query-btn" onclick="queryMemory()">GO</button>
+      </div>
+      <div id="mem-results"></div>
+
+      <div class="section-label">TRAINING PROGRESS</div>
+      <div style="margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim);margin-bottom:4px;">
+          <span>SAMPLES CAPTURED</span>
+          <span id="tp-count">0</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="tp-bar"></div>
+        </div>
+      </div>
+      <button class="ctrl-btn" style="width:100%;margin-bottom:4px;" onclick="exportDataset('jsonl')">EXPORT JSONL</button>
+      <button class="ctrl-btn" style="width:100%;margin-bottom:4px;" onclick="exportDataset('alpaca')">EXPORT ALPACA</button>
+      <button class="ctrl-btn" style="width:100%;" onclick="exportDataset('sharegpt')">EXPORT SHAREGPT</button>
+
+    </div>
+
+    <!-- Task input -->
+    <div id="task-input-wrap">
+      <input id="task-input" placeholder="new task description…" onkeydown="if(event.key==='Enter')submitTask()" />
+      <button id="task-send" onclick="submitTask()">+</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── STATUSBAR ────────────────────────────────────────────────── -->
+<div id="statusbar">
+  <div class="sb-dot" id="sb-dot"></div>
+  <span id="sb-state">IDLE</span>
+  <span id="sb-task" style="color:var(--text-dim);">no active task</span>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar" id="main-progress"></div>
+  </div>
+  <span id="sb-model" style="color:var(--text-dim);">ollama:mistral</span>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────
+const state = {
+  running: false,
+  paused: false,
+  step: 0,
+  maxSteps: 200,
+  taskCount: 0,
+  vectorCount: 0,
+  sampleCount: 0,
+  model: 'ollama:mistral',
+  artifacts: {},
+  tasks: [],
+};
+
+// artifact registry — matches left panel IDs
+const ARTIFACTS = [
+  'art-embedder','art-vectorstore','art-model-router',
+  'art-runner','art-actions','art-executor',
+  'art-memory','art-state','art-graph',
+  'art-hooks','art-trajectory','art-dataset',
+  'art-tasks','art-bridge','art-gui',
+];
+
+// ── Bridge (communicates with Python backend via Tauri invoke) ────
+let port = null;  // when real Tauri is wired, use window.__TAURI__
+
+function sendCmd(cmd, extra = {}) {
+  if (window.__TAURI__) {
+    window.__TAURI__.tauri.invoke('send_cmd', { cmd, ...extra });
+  } else {
+    logLine('think', 'CMD', `→ ${cmd} ${JSON.stringify(extra)}`);
+  }
+}
+
+// ── Handle messages from Python backend ──────────────────────────
+function handleMessage(msg) {
+  const t = msg.type;
+
+  if (t === 'step') {
+    state.step = msg.step;
+    state.maxSteps = msg.max || 200;
+    document.getElementById('stat-step').textContent = msg.step;
+    document.getElementById('main-progress').style.width =
+      Math.round((msg.step / state.maxSteps) * 100) + '%';
+    logLine('step', 'STEP', `${msg.step}/${msg.max}`);
+  }
+
+  else if (t === 'event') {
+    const ev = msg.event || '';
+    logLine('event', ev.toUpperCase().slice(0,12), JSON.stringify(msg.payload || {}).slice(0,80));
+
+    // update artifact status based on events
+    if (ev === 'memory.stored' || ev === 'memory.retrieved') setGreen('art-memory');
+    if (ev === 'model.call')     setGreen('art-model-router');
+    if (ev === 'model.response') setGreen('art-model-router');
+    if (ev === 'task.created')   { state.taskCount++; document.getElementById('stat-tasks').textContent = state.taskCount; }
+    if (ev === 'training.sample') {
+      state.sampleCount++;
+      document.getElementById('stat-samples').textContent = state.sampleCount;
+      document.getElementById('tp-count').textContent = state.sampleCount;
+      document.getElementById('tp-bar').style.width = Math.min(state.sampleCount / 10, 100) + '%';
+      setGreen('art-hooks');
+      setGreen('art-trajectory');
+    }
+    if (ev === 'action.executed') setGreen('art-actions');
+    if (ev === 'state.saved')     setGreen('art-state');
+    if (ev === 'graph.updated')   setGreen('art-graph');
+    if (ev === 'loop.start')      { setRunning(true); setGreen('art-runner'); setGreen('art-bridge'); }
+    if (ev === 'loop.stop')       setRunning(false);
+  }
+
+  else if (t === 'action') {
+    logLine('action', msg.action?.toUpperCase().slice(0,12) || 'ACT', msg.result?.slice(0,80) || '');
+    setGreen('art-executor');
+  }
+
+  else if (t === 'stats') {
+    if (msg.memory?.vector?.count !== undefined) {
+      state.vectorCount = msg.memory.vector.count;
+      document.getElementById('stat-vectors').textContent = state.vectorCount;
+    }
+    if (msg.training?.training_samples !== undefined) {
+      state.sampleCount = msg.training.training_samples;
+      document.getElementById('stat-samples').textContent = state.sampleCount;
+    }
+    if (msg.tasks) updateTaskList(msg.tasks);
+  }
+
+  else if (t === 'respond') {
+    logLine('event', 'RESPOND', msg.text?.slice(0,120) || '');
+  }
+
+  else if (t === 'think') {
+    logLine('think', 'THINK', msg.text?.slice(0,120) || '');
+  }
+
+  else if (t === 'error') {
+    logLine('error', 'ERROR', msg.error?.slice(0,120) || '');
+  }
+
+  else if (t === 'dataset') {
+    logLine('event', 'DATASET', `exported → ${msg.path} (${msg.summary?.n_samples} samples)`);
+    setGreen('art-dataset');
+  }
+
+  else if (t === 'ready') {
+    logLine('step', 'READY', `backend v${msg.version}`);
+  }
+}
+
+// ── Artifact status ───────────────────────────────────────────────
+function setGreen(id) {
+  const el = document.getElementById(id);
+  if (el && el.classList.contains('red')) {
+    el.classList.remove('red');
+    el.classList.add('green');
+    updateArtifactCounts();
+    drawGraph();
+  }
+}
+
+function updateArtifactCounts() {
+  const greens = document.querySelectorAll('.artifact.green').length;
+  const reds   = document.querySelectorAll('.artifact.red').length;
+  document.getElementById('stat-green').textContent = greens;
+  document.getElementById('stat-red').textContent   = reds;
+}
+
+// ── Loop control ──────────────────────────────────────────────────
+function startRun() {
+  const task = document.getElementById('task-input').value.trim();
+  if (!task) { logLine('error','ERROR','enter a task description'); return; }
+  sendCmd('run', { task, model: state.model });
+  setRunning(true);
+}
+
+function togglePause() {
+  state.paused = !state.paused;
+  const btn = document.getElementById('btn-pause');
+  if (state.paused) {
+    sendCmd('pause');
+    btn.textContent = 'RESUME';
+    btn.className = 'ctrl-btn run';
+    document.getElementById('sb-state').textContent = 'PAUSED';
+  } else {
+    sendCmd('resume');
+    btn.textContent = 'PAUSE';
+    btn.className = 'ctrl-btn pause';
+    document.getElementById('sb-state').textContent = 'RUNNING';
+  }
+}
+
+function setRunning(running) {
+  state.running = running;
+  const dot = document.getElementById('sb-dot');
+  const sb  = document.getElementById('sb-state');
+  if (running) {
+    dot.className = 'sb-dot running';
+    sb.textContent = 'RUNNING';
+  } else {
+    dot.className = 'sb-dot';
+    sb.textContent = 'IDLE';
+  }
+}
+
+function setModel(val) {
+  state.model = val;
+  document.getElementById('sb-model').textContent = val;
+  sendCmd('set_model', { model: val });
+}
+
+function submitTask() {
+  const input = document.getElementById('task-input');
+  const desc = input.value.trim();
+  if (!desc) return;
+  sendCmd('task', { description: desc });
+  input.value = '';
+}
+
+function queryMemory() {
+  const q = document.getElementById('mem-query').value.trim();
+  if (!q) return;
+  sendCmd('memory_query', { query: q });
+}
+
+function exportDataset(fmt) {
+  sendCmd('dataset', { format: fmt });
+}
+
+// ── Task list render ──────────────────────────────────────────────
+function updateTaskList(stats) {
+  const el = document.getElementById('task-list');
+  const items = Object.entries(stats)
+    .filter(([,v]) => v > 0)
+    .map(([k,v]) => {
+      const color = k === 'completed' ? 'var(--green)' : k === 'failed' ? 'var(--red)' : k === 'active' ? 'var(--yellow)' : 'var(--text-dim)';
+      return `<div style="font-size:10px;color:${color};display:flex;justify-content:space-between;margin-bottom:3px;">
+        <span>${k.toUpperCase()}</span><span>${v}</span></div>`;
+    }).join('');
+  el.innerHTML = items || '<div style="font-size:10px;color:var(--text-dim);">no tasks yet</div>';
+}
+
+// ── Log feed ──────────────────────────────────────────────────────
+let logCount = 0;
+function logLine(cls, type, msg) {
+  const feed = document.getElementById('log-feed');
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8);
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-time">${ts}</span><span class="log-type ${cls}">${type}</span><span class="log-msg">${escHtml(msg)}</span>`;
+  feed.appendChild(line);
+  // keep last 300 lines
+  logCount++;
+  if (logCount > 300) feed.removeChild(feed.firstChild);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Graph canvas ──────────────────────────────────────────────────
+function drawGraph() {
+  const canvas = document.getElementById('graph-canvas');
+  const area   = document.getElementById('graph-area');
+  canvas.width  = area.clientWidth;
+  canvas.height = area.clientHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const artifacts = Array.from(document.querySelectorAll('.artifact'));
+  const n = artifacts.length;
+  if (n === 0) return;
+
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const r  = Math.min(cx, cy) * 0.72;
+
+  const positions = [];
+
+  artifacts.forEach((el, i) => {
+    const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    positions.push({ x, y, el });
+
+    const isGreen = el.classList.contains('green');
+    const color   = isGreen ? '#2ecc71' : '#e63946';
+    const label   = el.querySelector('.art-label')?.textContent || '';
+
+    // glow
+    ctx.beginPath();
+    ctx.arc(x, y, 14, 0, Math.PI * 2);
+    ctx.fillStyle = isGreen ? 'rgba(46,204,113,0.12)' : 'rgba(230,57,70,0.12)';
+    ctx.fill();
+
+    // node
+    ctx.beginPath();
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    // label
+    ctx.font = '9px JetBrains Mono, monospace';
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.fillText(label.slice(0,12), x, y + 22);
+  });
+
+  // draw edges (ring)
+  ctx.strokeStyle = 'rgba(124,106,255,0.15)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < n; i++) {
+    const a = positions[i];
+    const b = positions[(i + 1) % n];
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  }
+
+  // center label
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.fillStyle = 'rgba(124,106,255,0.5)';
+  ctx.textAlign = 'center';
+  const greens = document.querySelectorAll('.artifact.green').length;
+  ctx.fillText(`${greens}/${n} LIVE`, cx, cy + 4);
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  drawGraph();
+  updateArtifactCounts();
+  logLine('step', 'INIT', 'GUI roadmap loaded — all artifacts RED (unbuilt)');
+  logLine('think', 'INFO', 'Connect Python backend via Tauri to begin');
+
+  // listen for Tauri events if available
+  if (window.__TAURI__) {
+    window.__TAURI__.event.listen('agent-message', (ev) => {
+      handleMessage(ev.payload);
+    });
+  }
+});
+
+window.addEventListener('resize', drawGraph);
+
+// expose for Tauri to call directly
+window.handleMessage = handleMessage;
+</script>
+</body>
+</html>

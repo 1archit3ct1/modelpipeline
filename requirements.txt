@@ -1,0 +1,29 @@
+# Agent Framework — Python dependencies
+# Install: pip install -r requirements.txt
+
+# ── Embedding model ───────────────────────────────────────────────
+transformers>=4.40.0
+torch>=2.2.0          # GPU: install torch with CUDA from pytorch.org
+tokenizers>=0.19.0
+sentencepiece>=0.2.0
+huggingface-hub>=0.22.0
+
+# ── Vector store ──────────────────────────────────────────────────
+hnswlib>=0.8.0
+numpy>=1.26.0
+
+# ── Storage ───────────────────────────────────────────────────────
+jsonlines>=4.0.0
+
+# ── CLI ───────────────────────────────────────────────────────────
+typer>=0.12.0
+
+# ── Optional: local model serving ────────────────────────────────
+# Ollama is external binary — install from https://ollama.ai
+# No pip package needed for Ollama backend
+
+# ── Optional: OpenAI-compatible API ──────────────────────────────
+# No extra deps — uses stdlib urllib only
+
+# ── Dev / testing ─────────────────────────────────────────────────
+pytest>=8.0.0

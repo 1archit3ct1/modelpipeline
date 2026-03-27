@@ -1,0 +1,41 @@
+# Secrets
+.env
+.env.*
+*.pem
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Data — do not commit training data or model weights
+data/memory/
+data/trajectories/
+data/datasets/
+data/model_cache/
+data/tasks.jsonl
+data/state.json
+data/graph.json
+
+# Workspace — agent file operations
+workspace/
+
+# Tauri / Rust
+ui/src-tauri/target/
+ui/src-tauri/WixTools/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
